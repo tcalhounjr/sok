@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #0b1326;
+    color: #dae2fd;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar — matches surface palette */
+  ::-webkit-scrollbar       { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #0b1326; }
+  ::-webkit-scrollbar-thumb { background: #31394d; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a4258; }
+}
+
+@layer components {
+  /* ---- Pulse indicator (DESIGN.md "Pulse" Identifier) ---- */
+  .pulse-dot {
+    @apply inline-block w-1 h-1 rounded-full bg-secondary;
+    animation: pulse-opacity 2s ease-in-out infinite;
+  }
+  @keyframes pulse-opacity {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  /* ---- Glass (DESIGN.md glassmorphism) ---- */
+  .glass {
+    background: rgba(44, 52, 72, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* ---- Ghost border ---- */
+  .ghost-border {
+    border: 1px solid rgba(69, 70, 77, 0.15);
+  }
+
+  /* ---- Primary gradient button ---- */
+  .btn-primary {
+    @apply px-4 py-2 rounded-md font-display font-semibold text-on_primary text-label-md uppercase tracking-widest;
+    background: linear-gradient(135deg, #bcc7de 0%, #0c1829 100%);
+    transition: opacity 0.15s ease;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+
+  /* ---- Secondary ghost button ---- */
+  .btn-secondary {
+    @apply px-4 py-2 rounded-md font-display font-medium text-primary text-label-md uppercase tracking-widest;
+    border: 1px solid rgba(69, 70, 77, 0.15);
+    background: transparent;
+    transition: background 0.15s ease;
+  }
+  .btn-secondary:hover { background: rgba(49, 57, 77, 0.4); }
+
+  /* ---- Card ---- */
+  .card {
+    @apply rounded-lg bg-surface_container shadow-ambient;
+  }
+  .card-high {
+    @apply rounded-lg bg-surface_container_high shadow-ambient;
+  }
+
+  /* ---- Section label (archival overline) ---- */
+  .overline {
+    @apply text-label-sm uppercase tracking-widest text-on_tertiary_container font-body;
+  }
+
+  /* ---- Monospaced ID ---- */
+  .mono-id {
+    @apply font-mono text-label-sm text-on_surface_variant;
+  }
+}
