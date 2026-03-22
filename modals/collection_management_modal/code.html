@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Collection Management - Synthetix Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#dae2fd",
+              "surface-tint": "#bcc7de",
+              "surface-container-low": "#131b2e",
+              "outline-variant": "#45464d",
+              "on-secondary-fixed": "#002113",
+              "tertiary-fixed": "#ffddb8",
+              "surface-dim": "#0b1326",
+              "on-tertiary-fixed": "#2a1700",
+              "surface-container-lowest": "#060e20",
+              "surface-container": "#171f33",
+              "primary-fixed": "#d8e3fb",
+              "on-primary-fixed": "#111c2d",
+              "tertiary-container": "#251400",
+              "on-surface": "#dae2fd",
+              "surface-variant": "#2d3449",
+              "on-surface-variant": "#c6c6cd",
+              "on-background": "#dae2fd",
+              "surface-bright": "#31394d",
+              "on-secondary-fixed-variant": "#005236",
+              "on-tertiary-fixed-variant": "#653e00",
+              "surface-container-highest": "#2d3449",
+              "primary": "#bcc7de",
+              "on-secondary-container": "#00311f",
+              "on-tertiary": "#472a00",
+              "error-container": "#93000a",
+              "tertiary": "#ffb95f",
+              "secondary-container": "#00a572",
+              "on-primary": "#263143",
+              "on-secondary": "#003824",
+              "on-primary-fixed-variant": "#3c475a",
+              "on-tertiary-container": "#b47300",
+              "secondary": "#4edea3",
+              "on-error": "#690005",
+              "secondary-fixed-dim": "#4edea3",
+              "tertiary-fixed-dim": "#ffb95f",
+              "secondary-fixed": "#6ffbbe",
+              "surface-container-high": "#222a3d",
+              "outline": "#909097",
+              "on-error-container": "#ffdad6",
+              "inverse-on-surface": "#283044",
+              "background": "#0b1326",
+              "surface": "#0b1326",
+              "primary-fixed-dim": "#bcc7de",
+              "inverse-primary": "#545f73",
+              "primary-container": "#0c1829",
+              "on-primary-container": "#768197",
+              "error": "#ffb4ab"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-panel {
+        background: rgba(45, 52, 73, 0.4);
+        backdrop-filter: blur(20px);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #45464d;
+        border-radius: 10px;
+      }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-secondary/30">
+<!-- Top Navigation Overlay (Suppressed visibility for modal focus but kept as background anchor) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0b1326] dark:bg-[#0b1326] border-b border-opacity-15 pointer-events-none opacity-40">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-[#bcc7de] dark:text-[#bcc7de] font-headline">Synthetix Analytics</span>
+<nav class="hidden md:flex gap-6 font-manrope text-sm tracking-tight uppercase">
+<a class="text-slate-500 hover:text-[#bcc7de] transition-colors" href="#">Intelligence</a>
+<a class="text-slate-500 hover:text-[#bcc7de] transition-colors" href="#">Feeds</a>
+<a class="text-slate-500 hover:text-[#bcc7de] transition-colors" href="#">Reports</a>
+<a class="text-[#bcc7de] border-b-2 border-[#bcc7de] pb-1" href="#">Collections</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#bcc7de]">notifications</span>
+<span class="material-symbols-outlined text-[#bcc7de]">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar circle image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5Wcjs0C4GT8Bl2hp5p5AETzFl-LhLt5lvg0VNj2zoAzqcDUz7ha1voCp50-ZGi-smYq00KzUxQP1oYIbCmMMIz4J940F4XTsc0e9mUo-4d8Gb1_qBeEHQVITUwAX4JStTJUMMyPblVmGf6RS-ODE7Zyrlpnhe4HiRczcKXZC2kBeqeIjb5h77W91ECYSWSw90fNxw12VMVHYVehAfZ32rf0F9lz46dF4-goK55F8MAzIycTc_Y5XJLIVaW31ikJBp5UBQ_OsYjKmm"/>
+</div>
+</div>
+</header>
+<!-- Modal Backdrop -->
+<main class="fixed inset-0 z-[100] flex items-center justify-center bg-surface-dim/80 backdrop-blur-md p-4">
+<!-- Modal Container -->
+<div class="relative w-full max-w-5xl h-[870px] bg-surface-container-low flex overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10">
+<!-- Sidebar: Collections List -->
+<aside class="w-1/3 border-r border-outline-variant/15 flex flex-col">
+<div class="p-6 border-b border-outline-variant/10">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline font-bold text-lg tracking-tight text-primary">Collections</h2>
+<button class="flex items-center gap-2 px-3 py-1.5 bg-surface-bright/40 hover:bg-surface-bright transition-all text-xs font-semibold rounded-lg text-secondary">
+<span class="material-symbols-outlined text-sm">add</span>
+                            New Collection
+                        </button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search_insights</span>
+<input class="w-full bg-surface-container text-sm py-2 pl-10 pr-4 rounded-lg border-none ring-1 ring-outline-variant/20 focus:ring-secondary/50 transition-all placeholder:text-outline/50" placeholder="Filter collections..." type="text"/>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-2">
+<!-- Collection Item Active -->
+<button class="w-full flex items-center justify-between p-4 mb-1 rounded-lg bg-surface-container-high ring-1 ring-secondary/20 group transition-all">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">layers</span>
+<div class="text-left">
+<p class="text-sm font-semibold text-on-surface">Global Sentiment Hub</p>
+<p class="text-[0.6875rem] text-outline uppercase tracking-wider">12 Active Searches</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-on-surface text-sm">chevron_right</span>
+</button>
+<!-- Collection Item -->
+<button class="w-full flex items-center justify-between p-4 mb-1 rounded-lg hover:bg-surface-container transition-all group">
+<div class="flex items-center gap-3 text-outline">
+<span class="material-symbols-outlined">inventory_2</span>
+<div class="text-left">
+<p class="text-sm font-semibold text-on-surface-variant">Archived Q3 Reports</p>
+<p class="text-[0.6875rem] text-outline/60 uppercase tracking-wider">42 Searches</p>
+</div>
+</div>
+</button>
+<!-- Collection Item -->
+<button class="w-full flex items-center justify-between p-4 mb-1 rounded-lg hover:bg-surface-container transition-all group">
+<div class="flex items-center gap-3 text-outline">
+<span class="material-symbols-outlined">public</span>
+<div class="text-left">
+<p class="text-sm font-semibold text-on-surface-variant">Regional EMEA Focus</p>
+<p class="text-[0.6875rem] text-outline/60 uppercase tracking-wider">08 Searches</p>
+</div>
+</div>
+</button>
+</div>
+<div class="p-4 bg-surface-container-lowest/50 border-t border-outline-variant/10">
+<div class="flex items-center gap-4 text-xs font-medium text-outline">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">help_outline</span> Support</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs">code</span> API Docs</span>
+</div>
+</div>
+</aside>
+<!-- Main Content: Search Management -->
+<section class="flex-1 flex flex-col bg-surface-container-lowest">
+<!-- Header -->
+<div class="px-8 py-6 flex items-center justify-between">
+<div>
+<span class="text-[0.6875rem] font-bold text-on-tertiary-container bg-tertiary/20 px-2 py-0.5 rounded uppercase tracking-widest mb-2 inline-block">Active Collection</span>
+<h1 class="text-2xl font-headline font-extrabold text-on-surface tracking-tight">Global Sentiment Hub</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<button class="p-2 text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+</div>
+<!-- Search Grid Asymmetric Layout -->
+<div class="flex-1 px-8 pb-8 overflow-y-auto custom-scrollbar">
+<!-- Search Management Controls -->
+<div class="mb-8 flex flex-col md:flex-row gap-4 items-end">
+<div class="flex-1">
+<label class="text-[0.6875rem] uppercase tracking-widest text-outline font-bold mb-2 block">Quick-Add Search</label>
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-container-high border-none rounded-lg text-sm px-4 py-2.5 ring-1 ring-outline-variant/20 focus:ring-secondary/50" placeholder="Enter search ID or keyword..." type="text"/>
+<button class="px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-sm rounded-lg hover:shadow-lg hover:shadow-primary/10 transition-all">Add</button>
+</div>
+</div>
+</div>
+<!-- Searches Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Search Card 1 -->
+<div class="bg-surface-container-high p-5 rounded-xl border-l-4 border-secondary group hover:bg-surface-bright/30 transition-all relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="text-[0.625rem] font-mono text-outline">ID: SX-9921</span>
+</div>
+<button class="text-outline hover:text-error transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-sm">remove_circle</span>
+</button>
+</div>
+<h3 class="font-headline font-bold text-on-surface mb-1">Energy Market Volatility</h3>
+<p class="text-xs text-outline leading-relaxed mb-4">Tracking high-frequency sentiment shifts across EMEA energy trading desks and news syndicates.</p>
+<div class="flex items-center justify-between text-[0.6875rem] font-bold uppercase tracking-wider">
+<span class="text-secondary">842 Results</span>
+<span class="text-outline">Updated 2m ago</span>
+</div>
+</div>
+<!-- Search Card 2 -->
+<div class="bg-surface-container-high p-5 rounded-xl border-l-4 border-outline-variant group hover:bg-surface-bright/30 transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+<span class="text-[0.625rem] font-mono text-outline">ID: SX-4402</span>
+</div>
+<button class="text-outline hover:text-error transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-sm">remove_circle</span>
+</button>
+</div>
+<h3 class="font-headline font-bold text-on-surface mb-1">Semi-Conductor Supply Chain</h3>
+<p class="text-xs text-outline leading-relaxed mb-4">Longitudinal study of manufacturing delays and patent filings in East Asian technology hubs.</p>
+<div class="flex items-center justify-between text-[0.6875rem] font-bold uppercase tracking-wider">
+<span class="text-outline">1.2k Results</span>
+<span class="text-outline">Updated 4h ago</span>
+</div>
+</div>
+<!-- Search Card 3 -->
+<div class="bg-surface-container-high p-5 rounded-xl border-l-4 border-error group hover:bg-surface-bright/30 transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="text-[0.625rem] font-mono text-outline">ID: SX-1029</span>
+</div>
+<button class="text-outline hover:text-error transition-colors opacity-0 group-hover:opacity-100">
+<span class="material-symbols-outlined text-sm">remove_circle</span>
+</button>
+</div>
+<h3 class="font-headline font-bold text-on-surface mb-1">Geopolitical Tension Alert</h3>
+<p class="text-xs text-outline leading-relaxed mb-4">Monitoring diplomatic communications and fringe media for escalation indicators in the Balkan region.</p>
+<div class="flex items-center justify-between text-[0.6875rem] font-bold uppercase tracking-wider">
+<span class="text-error">Critical Data</span>
+<span class="text-outline">Live Feed</span>
+</div>
+</div>
+<!-- Add Search Tile -->
+<div class="border-2 border-dashed border-outline-variant/30 rounded-xl p-5 flex flex-col items-center justify-center gap-3 hover:border-secondary/50 hover:bg-secondary/5 transition-all cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-secondary/20 transition-all">
+<span class="material-symbols-outlined text-outline group-hover:text-secondary">add_circle</span>
+</div>
+<span class="text-[0.6875rem] font-bold uppercase tracking-widest text-outline">Link Existing Search</span>
+</div>
+</div>
+<!-- Footer Action Bar -->
+<div class="mt-8 pt-8 border-t border-outline-variant/10 flex items-center justify-between">
+<div class="flex -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-low" data-alt="Team collaborator avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaTCkwZx6qYZJ4QPwVdom43spua_4_fWdMH5oXtpX2ipwpYOgoX5-j0vaYU6PwB69j77xDLEHRdo3IrxockPLiIc80SjSvX0jWAFb-ELugSLIcPMxMgUrY2UVYRyBNTuwcanwrUIFG9GFMA0zNVjCbAvW_6v-9ayS7ZnUIKZ6UKLbjTPQYDHiipclgv-G-buE-Pc6VZvmzBMLrwI6DUMGZPhkfH1cvVb0AN74wq08-DGZQSzDz06k9KlDMMhk_n2YaNCYSRV1NxaiK"/>
+<img class="w-8 h-8 rounded-full border-2 border-surface-container-low" data-alt="Team collaborator avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrzhnMsRtJAopFWnss3jwenCacYORg-wUDdiD3DllR-Glg3BH7vu_7x6yCoQ1KUnd0M0Lt7PdwDDPNRamdddmecMeldMaovTOZwepjraDhkJe6_q0HFXeV4aBvOTuASJpxwzhFGTJzQz1FnajhPiicn5Lf4i11CItzIyeqDglR2XJbDHhii-Lgcg_5jmEFwrwOd1CQRq2-3VX13ONrMc8WfLh7RtxECHr0YG-bMs9Q-t85fkNjfo-70P7d3jfeM2_t1NJi9EsoT6F6"/>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-low bg-surface-bright flex items-center justify-center text-[10px] font-bold text-primary">+3</div>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2 text-sm font-bold text-outline hover:text-on-surface transition-colors">Discard Changes</button>
+<button class="px-8 py-2 bg-secondary/10 hover:bg-secondary/20 text-secondary border border-secondary/30 text-sm font-bold rounded-lg transition-all">Save Collection State</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Tooltip/Floating Pulse Identifier -->
+<div class="fixed bottom-10 right-10 glass-panel border border-white/5 p-4 rounded-xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5">
+<div class="relative">
+<div class="w-3 h-3 bg-secondary rounded-full"></div>
+<div class="absolute inset-0 w-3 h-3 bg-secondary rounded-full animate-ping opacity-75"></div>
+</div>
+<div>
+<p class="text-[0.625rem] text-outline uppercase tracking-widest font-bold">System Status</p>
+<p class="text-xs font-semibold text-on-surface">Data Synced Across 5 Regions</p>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Filter Preset Library - NarrativeTracker</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#bcc7de",
+                        "on-surface-variant": "#c6c6cd",
+                        "secondary-container": "#00a572",
+                        "secondary": "#4edea3",
+                        "on-tertiary": "#472a00",
+                        "on-error": "#690005",
+                        "secondary-fixed": "#6ffbbe",
+                        "on-secondary-fixed": "#002113",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "outline-variant": "#45464d",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "on-secondary-container": "#00311f",
+                        "inverse-primary": "#545f73",
+                        "primary-container": "#0c1829",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#060e20",
+                        "surface-dim": "#0b1326",
+                        "error-container": "#93000a",
+                        "outline": "#909097",
+                        "on-tertiary-container": "#b47300",
+                        "surface-container": "#171f33",
+                        "background": "#0b1326",
+                        "surface": "#0b1326",
+                        "primary-fixed": "#d8e3fb",
+                        "on-tertiary-fixed": "#2a1700",
+                        "inverse-on-surface": "#283044",
+                        "tertiary-fixed": "#ffddb8",
+                        "error": "#ffb4ab",
+                        "surface-container-high": "#222a3d",
+                        "on-primary": "#263143",
+                        "surface-container-highest": "#2d3449",
+                        "on-surface": "#dae2fd",
+                        "tertiary-container": "#251400",
+                        "on-secondary": "#003824",
+                        "surface-container-low": "#131b2e",
+                        "primary-fixed-dim": "#bcc7de",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "on-primary-fixed": "#111c2d",
+                        "inverse-surface": "#dae2fd",
+                        "surface-bright": "#31394d",
+                        "on-primary-container": "#768197",
+                        "surface-tint": "#bcc7de",
+                        "tertiary": "#ffb95f",
+                        "on-secondary-fixed-variant": "#005236",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-variant": "#2d3449",
+                        "on-background": "#dae2fd"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen flex overflow-hidden">
+<!-- SideNavBar Shell -->
+<aside class="hidden lg:flex flex-col border-r border-outline-variant/15 bg-[#131b2e] h-full w-64 shrink-0">
+<div class="p-6 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+</div>
+<div>
+<h1 class="text-lg font-extrabold text-[#bcc7de] leading-none">Media Intelligence</h1>
+<p class="text-[10px] uppercase tracking-widest text-[#dae2fd]/40 mt-1">Analytical Lens v2.4</p>
+</div>
+</div>
+<div class="px-4 mt-4">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary py-2.5 px-4 rounded-md font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Analysis
+            </button>
+</div>
+<nav class="flex-1 px-3 mt-8 space-y-1">
+<a class="text-[#dae2fd]/50 hover:bg-[#171f33] rounded-md px-3 py-2 flex items-center gap-3 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="text-[#dae2fd]/50 hover:bg-[#171f33] rounded-md px-3 py-2 flex items-center gap-3 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="manage_search">manage_search</span>
+<span>Search Builder</span>
+</a>
+<a class="bg-[#222a3d] text-[#bcc7de] rounded-md px-3 py-2 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="tune">tune</span>
+<span>Preset Library</span>
+</a>
+<a class="text-[#dae2fd]/50 hover:bg-[#171f33] rounded-md px-3 py-2 flex items-center gap-3 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="emergency_home">emergency_home</span>
+<span>Alerts</span>
+</a>
+<a class="text-[#dae2fd]/50 hover:bg-[#171f33] rounded-md px-3 py-2 flex items-center gap-3 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Archive</span>
+</a>
+</nav>
+<div class="p-4 border-t border-outline-variant/10 space-y-1">
+<a class="text-[#dae2fd]/50 hover:bg-[#171f33] rounded-md px-3 py-2 flex items-center gap-3 transition-colors duration-150 text-sm" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+<span>Help</span>
+</a>
+<a class="text-[#dae2fd]/50 hover:bg-[#171f33] rounded-md px-3 py-2 flex items-center gap-3 transition-colors duration-150 text-sm" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface h-screen overflow-y-auto">
+<!-- TopNavBar Shell -->
+<header class="flex justify-between items-center w-full px-6 h-16 bg-[#0b1326] sticky top-0 z-50 shrink-0">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-[#bcc7de] font-headline">NarrativeTracker</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#dae2fd]/60 hover:text-[#dae2fd] transition-colors text-sm font-medium" href="#">Analytics</a>
+<a class="text-[#dae2fd]/60 hover:text-[#dae2fd] transition-colors text-sm font-medium" href="#">Narratives</a>
+<a class="text-[#dae2fd]/60 hover:text-[#dae2fd] transition-colors text-sm font-medium" href="#">Sources</a>
+<a class="text-[#bcc7de] border-b-2 border-[#bcc7de] pb-1 text-sm font-medium" href="#">Presets</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary/40 text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-md pl-9 pr-4 py-1.5 text-xs w-64 focus:ring-1 focus:ring-primary/30 text-on-surface placeholder:text-on-surface-variant/30" placeholder="Search library..." type="text"/>
+</div>
+<button class="p-2 text-primary/60 hover:bg-[#31394d]/20 rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-primary/60 hover:bg-[#31394d]/20 rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-primary/20" data-alt="Professional headshot of a data analyst user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOAL8jbe1376n22NuFcbK90bnmjt_yIcQTYlqz3ToPbo8MypCwAu31c5kOrrwTSRQkv341x8YQJkyhFFc3F_JUhx4NLc0grfwdJ6aeeH306y0N5qOsTfkdvJ0iYPxefSWc6c8XPWpMt_cJGPMxDOpXHlbRSZMmtRpvPCAWdt8MGm0iEkC_4ElcIEjEpryrsI0G6N0Wy-xHUrV3xtxzY49q9BawH3pdD8wr3U63PypBkTwizTTwU7jVMYa2OwyC6YQMcofQ6pbRtT3m"/>
+</div>
+</header>
+<!-- View Content -->
+<div class="p-8 max-w-7xl mx-auto w-full">
+<div class="flex justify-between items-end mb-10">
+<div>
+<span class="text-xs font-semibold tracking-[0.1em] text-on-tertiary-container uppercase mb-2 block">Curation Tools</span>
+<h2 class="text-3xl font-extrabold text-on-surface font-headline tracking-tight">Filter Preset Library</h2>
+</div>
+<div class="flex gap-3">
+<button class="bg-surface-container-high hover:bg-surface-bright text-primary px-4 py-2 rounded flex items-center gap-2 text-sm font-medium transition-colors border border-outline-variant/10">
+<span class="material-symbols-outlined text-sm" data-icon="folder">folder</span>
+                        Manage Folders
+                    </button>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-4 py-2 rounded flex items-center gap-2 text-sm font-semibold shadow-xl active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="add_circle">add_circle</span>
+                        Create Preset
+                    </button>
+</div>
+</div>
+<!-- Bento Grid of Presets -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Preset Card 1: Featured/Active -->
+<div class="lg:col-span-2 group relative overflow-hidden bg-surface-container-high rounded-xl p-6 transition-all border border-outline-variant/5 hover:border-primary/20">
+<div class="absolute top-0 right-0 p-4">
+<span class="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[10px] font-bold uppercase tracking-wider">Most Active</span>
+</div>
+<div class="flex flex-col h-full">
+<div class="mb-6">
+<span class="material-symbols-outlined text-3xl text-primary mb-4" data-icon="source">source</span>
+<h3 class="text-xl font-bold text-on-surface mb-1">Tier 1 US Sources</h3>
+<p class="text-on-surface-variant/60 text-sm max-w-md leading-relaxed">Exclusive filtering for high-authority American journalism, including NYT, WSJ, and Reuters direct feeds.</p>
+</div>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div>
+<span class="block text-[10px] uppercase text-on-surface-variant/40 font-semibold tracking-wider">Usage</span>
+<span class="text-lg font-headline font-bold text-on-surface">142 <span class="text-xs font-normal text-on-surface-variant/50">searches</span></span>
+</div>
+<div>
+<span class="block text-[10px] uppercase text-on-surface-variant/40 font-semibold tracking-wider">Type</span>
+<span class="text-sm font-medium text-secondary">Source List</span>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-bright rounded text-on-surface-variant transition-colors"><span class="material-symbols-outlined" data-icon="edit">edit</span></button>
+<button class="p-2 hover:bg-surface-bright rounded text-on-surface-variant transition-colors"><span class="material-symbols-outlined" data-icon="share">share</span></button>
+</div>
+</div>
+</div>
+<!-- Subtle background decoration -->
+<div class="absolute -bottom-8 -right-8 w-40 h-40 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+</div>
+<!-- Preset Card 2 -->
+<div class="bg-surface-container rounded-xl p-6 transition-all border border-outline-variant/5 hover:bg-surface-container-high">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="mood_bad">mood_bad</span>
+</div>
+<button class="p-1 hover:bg-surface-bright rounded text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Negative Sentiment Only</h3>
+<p class="text-on-surface-variant/60 text-xs mb-8 line-clamp-2">Aggregates content with sentiment scores below -0.6 for crisis monitoring.</p>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-xs font-semibold text-on-surface-variant/50 uppercase tracking-widest">84 Uses</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-[10px] text-primary/70">Sentiment</span>
+</div>
+</div>
+<!-- Preset Card 3 -->
+<div class="bg-surface-container rounded-xl p-6 transition-all border border-outline-variant/5 hover:bg-surface-container-high">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</div>
+<button class="p-1 hover:bg-surface-bright rounded text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Global Tech Hubs</h3>
+<p class="text-on-surface-variant/60 text-xs mb-8 line-clamp-2">Filters for Silicon Valley, Shenzhen, and London tech sector narratives.</p>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-xs font-semibold text-on-surface-variant/50 uppercase tracking-widest">31 Uses</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-[10px] text-primary/70">Geofence</span>
+</div>
+</div>
+<!-- Preset Card 4 -->
+<div class="bg-surface-container rounded-xl p-6 transition-all border border-outline-variant/5 hover:bg-surface-container-high">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</div>
+<button class="p-1 hover:bg-surface-bright rounded text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Historical Archive</h3>
+<p class="text-on-surface-variant/60 text-xs mb-8 line-clamp-2">Restricts results to content published more than 5 years ago for trend comparison.</p>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-xs font-semibold text-on-surface-variant/50 uppercase tracking-widest">12 Uses</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-[10px] text-primary/70">Temporal</span>
+</div>
+</div>
+<!-- Preset Card 5 -->
+<div class="bg-surface-container rounded-xl p-6 transition-all border border-outline-variant/5 hover:bg-surface-container-high group">
+<div class="flex justify-between items-start mb-6">
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="verified">verified</span>
+</div>
+<button class="p-1 hover:bg-surface-bright rounded text-on-surface-variant"><span class="material-symbols-outlined" data-icon="more_vert">more_vert</span></button>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Verified Accounts Only</h3>
+<p class="text-on-surface-variant/60 text-xs mb-8 line-clamp-2">Social media filtering focusing exclusively on blue-check verified entities.</p>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-xs font-semibold text-on-surface-variant/50 uppercase tracking-widest">209 Uses</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-[10px] text-primary/70">Social</span>
+</div>
+</div>
+<!-- Add New Empty State Action -->
+<div class="bg-surface-container-low border-2 border-dashed border-outline-variant/20 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/40 transition-colors group cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant/40 mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl" data-icon="add">add</span>
+</div>
+<span class="text-sm font-bold text-on-surface-variant/60">New Filter Template</span>
+<p class="text-[10px] text-on-surface-variant/40 mt-1 max-w-[150px]">Define logic once, reuse across all analytical streams.</p>
+</div>
+</div>
+<!-- Management Section -->
+<div class="mt-16 p-8 rounded-2xl bg-[#131b2e] border border-outline-variant/10 overflow-hidden relative">
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+<div class="max-w-xl">
+<h3 class="text-2xl font-extrabold text-[#bcc7de] font-headline mb-3">Organization Defaults</h3>
+<p class="text-[#dae2fd]/60 leading-relaxed text-sm">
+                            Configure standard filter sets that are automatically pushed to every analyst's dashboard. These presets cannot be deleted by individual users.
+                        </p>
+<div class="flex gap-4 mt-6">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-xs font-medium text-[#dae2fd]/80">Compliance Ready</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="text-xs font-medium text-[#dae2fd]/80">Locked State</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-3 shrink-0">
+<button class="bg-primary/10 hover:bg-primary/20 text-primary py-3 px-6 rounded font-semibold text-sm transition-all border border-primary/20 text-center">
+                            Review Global Settings
+                        </button>
+<button class="bg-surface-container hover:bg-surface-container-high text-[#dae2fd]/80 py-3 px-6 rounded font-semibold text-sm transition-all text-center">
+                            Export Configuration
+                        </button>
+</div>
+</div>
+<!-- Abstract Design Detail -->
+<div class="absolute top-0 right-0 w-1/3 h-full overflow-hidden opacity-20 pointer-events-none">
+<svg class="w-full h-full scale-150 origin-top-right" viewbox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<path d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,79.6,-45.8C87.4,-32.5,90,-16.3,88.5,-0.9C87,14.5,81.4,29,73.1,42.3C64.8,55.5,53.8,67.6,40.4,74.1C27,80.7,13.5,81.7,-0.4,82.4C-14.3,83.1,-28.7,83.5,-41.8,77.2C-54.8,70.9,-66.6,58,-74.6,43.5C-82.6,29.1,-86.8,13.1,-86.1,-2.7C-85.4,-18.5,-79.8,-34,-70.6,-47C-61.4,-60,-48.5,-70.5,-34.7,-77.4C-20.9,-84.3,-10.4,-87.6,2.5,-91.9C15.4,-96.2,30.7,-83.6,44.7,-76.4Z" fill="#bcc7de" transform="translate(100 100)"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Footer / Technical Stats -->
+<footer class="mt-auto p-6 border-t border-outline-variant/10 flex justify-between items-center bg-surface-container-lowest">
+<div class="flex gap-4">
+<span class="text-[10px] text-on-surface-variant/40 font-mono tracking-tighter uppercase">Presets Loaded: 42</span>
+<span class="text-[10px] text-on-surface-variant/40 font-mono tracking-tighter uppercase">API Latency: 14ms</span>
+<span class="text-[10px] text-on-surface-variant/40 font-mono tracking-tighter uppercase">Last Sync: Just now</span>
+</div>
+<div class="flex gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-[10px] text-on-surface-variant/40 font-semibold uppercase tracking-widest">System Operational</span>
+</div>
+</footer>
+</main>
+<!-- Navigation Shell Mobile (Bottom) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-low border-t border-outline-variant/10 h-16 flex items-center justify-around z-[100] px-4">
+<button class="text-on-surface-variant/40 flex flex-col items-center gap-1">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[8px] uppercase tracking-tighter">Dash</span>
+</button>
+<button class="text-on-surface-variant/40 flex flex-col items-center gap-1">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="text-[8px] uppercase tracking-tighter">Search</span>
+</button>
+<button class="text-primary flex flex-col items-center gap-1">
+<span class="material-symbols-outlined" data-icon="tune" style="font-variation-settings: 'FILL' 1;">tune</span>
+<span class="text-[8px] uppercase tracking-tighter font-bold">Presets</span>
+</button>
+<button class="text-on-surface-variant/40 flex flex-col items-center gap-1">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="text-[8px] uppercase tracking-tighter">Alerts</span>
+</button>
+</nav>
+</body></html>

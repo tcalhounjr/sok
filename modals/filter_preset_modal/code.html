@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Synthetix Analytics - Filter Preset</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#dae2fd",
+              "surface-tint": "#bcc7de",
+              "surface-container-low": "#131b2e",
+              "outline-variant": "#45464d",
+              "on-secondary-fixed": "#002113",
+              "tertiary-fixed": "#ffddb8",
+              "surface-dim": "#0b1326",
+              "on-tertiary-fixed": "#2a1700",
+              "surface-container-lowest": "#060e20",
+              "surface-container": "#171f33",
+              "primary-fixed": "#d8e3fb",
+              "on-primary-fixed": "#111c2d",
+              "tertiary-container": "#251400",
+              "on-surface": "#dae2fd",
+              "surface-variant": "#2d3449",
+              "on-surface-variant": "#c6c6cd",
+              "on-background": "#dae2fd",
+              "surface-bright": "#31394d",
+              "on-secondary-fixed-variant": "#005236",
+              "on-tertiary-fixed-variant": "#653e00",
+              "surface-container-highest": "#2d3449",
+              "primary": "#bcc7de",
+              "on-secondary-container": "#00311f",
+              "on-tertiary": "#472a00",
+              "error-container": "#93000a",
+              "tertiary": "#ffb95f",
+              "secondary-container": "#00a572",
+              "on-primary": "#263143",
+              "on-secondary": "#003824",
+              "on-primary-fixed-variant": "#3c475a",
+              "on-tertiary-container": "#b47300",
+              "secondary": "#4edea3",
+              "on-error": "#690005",
+              "secondary-fixed-dim": "#4edea3",
+              "tertiary-fixed-dim": "#ffb95f",
+              "secondary-fixed": "#6ffbbe",
+              "surface-container-high": "#222a3d",
+              "outline": "#909097",
+              "on-error-container": "#ffdad6",
+              "inverse-on-surface": "#283044",
+              "background": "#0b1326",
+              "surface": "#0b1326",
+              "primary-fixed-dim": "#bcc7de",
+              "inverse-primary": "#545f73",
+              "primary-container": "#0c1829",
+              "on-primary-container": "#768197",
+              "error": "#ffb4ab"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30">
+<!-- Top Navigation Bar (Shared Component Template) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0b1326] border-b border-white border-opacity-5 backdrop-blur-xl">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-[#bcc7de] font-headline">Synthetix Analytics</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="font-manrope text-sm tracking-tight uppercase text-[#bcc7de] border-b-2 border-[#bcc7de] pb-1" href="#">Intelligence</a>
+<a class="font-manrope text-sm tracking-tight uppercase text-slate-500 hover:text-[#bcc7de] transition-colors" href="#">Feeds</a>
+<a class="font-manrope text-sm tracking-tight uppercase text-slate-500 hover:text-[#bcc7de] transition-colors" href="#">Reports</a>
+<a class="font-manrope text-sm tracking-tight uppercase text-slate-500 hover:text-[#bcc7de] transition-colors" href="#">Collections</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-[#31394d]/20 p-2 rounded-full cursor-pointer hover:bg-[#31394d]/40 transition-all duration-200">
+<span class="material-symbols-outlined text-[#bcc7de]">notifications</span>
+</div>
+<div class="bg-[#31394d]/20 p-2 rounded-full cursor-pointer hover:bg-[#31394d]/40 transition-all duration-200">
+<span class="material-symbols-outlined text-[#bcc7de]">settings</span>
+</div>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-white/10" data-alt="Professional male corporate user profile headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZfA9yReq2hyNGyEaoQsRCJT6H4dzrScwODijZbPJiRApTgUzR1ZN0u387kO9l8mgSf1p2lkazrwrne7Uc2BAAzmNazr1jx2Ie-M1LNtyWV2xD_WcWHeogUCpqvvgQeUuBKLlY0cAw5v10-2rr4EFH85fOY3UKS7_M5s0GkbWUA_kt8Uvt0bBtltnRzOyJW9Lt6E3D5uqVHa2V_v_f5xNAmo79v-t1OQ5uIgSbjEXWi64Qz279WFJZhsrJtzbRBouj8OfGgSfyGsce"/>
+</div>
+</header>
+<!-- Side Navigation Bar (Shared Component Template) -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 flex flex-col py-4 bg-[#131b2e] border-r border-white/5">
+<div class="px-6 mb-8">
+<h2 class="text-[#bcc7de] text-lg font-black font-headline">Media Intelligence</h2>
+<span class="text-slate-500 text-[0.6875rem] font-medium tracking-widest uppercase">v4.2.0-Alpha</span>
+</div>
+<nav class="flex-1">
+<a class="text-slate-400 hover:text-white flex items-center gap-3 px-6 py-3 hover:bg-[#222a3d] transition-all" href="#">
+<span class="material-symbols-outlined">search_insights</span>
+<span class="font-manrope font-medium text-[0.8125rem]">Global Search</span>
+</a>
+<div class="bg-[#171f33] text-[#4edea3] rounded-r-lg border-l-4 border-[#4edea3] flex items-center gap-3 px-6 py-3 translate-x-1 transition-transform cursor-pointer">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-manrope font-medium text-[0.8125rem]">Sentiment</span>
+</div>
+<a class="text-slate-400 hover:text-white flex items-center gap-3 px-6 py-3 hover:bg-[#222a3d] transition-all" href="#">
+<span class="material-symbols-outlined">layers</span>
+<span class="font-manrope font-medium text-[0.8125rem]">Source Tiers</span>
+</a>
+<a class="text-slate-400 hover:text-white flex items-center gap-3 px-6 py-3 hover:bg-[#222a3d] transition-all" href="#">
+<span class="material-symbols-outlined">public</span>
+<span class="font-manrope font-medium text-[0.8125rem]">Regional</span>
+</a>
+<a class="text-slate-400 hover:text-white flex items-center gap-3 px-6 py-3 hover:bg-[#222a3d] transition-all" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-manrope font-medium text-[0.8125rem]">Archive</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full py-3 bg-gradient-to-br from-[#bcc7de] to-[#0c1829] text-[#263143] font-bold text-sm rounded transition-all active:scale-95">
+                New Collection
+            </button>
+<div class="mt-6 flex flex-col gap-2">
+<a class="text-slate-500 text-[0.8125rem] flex items-center gap-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">help_outline</span> Support
+                </a>
+<a class="text-slate-500 text-[0.8125rem] flex items-center gap-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">code</span> API
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas (Modal Overlay Effect) -->
+<main class="ml-64 pt-16 min-h-screen p-8 bg-surface">
+<!-- Background Content (Simulated Dashboard) -->
+<div class="opacity-20 pointer-events-none grid grid-cols-12 gap-8">
+<div class="col-span-8 space-y-8">
+<div class="h-64 bg-surface-container rounded-lg border border-white/5"></div>
+<div class="grid grid-cols-2 gap-8">
+<div class="h-48 bg-surface-container rounded-lg border border-white/5"></div>
+<div class="h-48 bg-surface-container rounded-lg border border-white/5"></div>
+</div>
+</div>
+<div class="col-span-4 h-full bg-surface-container rounded-lg border border-white/5"></div>
+</div>
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-surface-dim/80 backdrop-blur-md">
+<!-- Create/Edit Filter Preset Modal -->
+<div class="w-full max-w-2xl bg-surface-container-high rounded-xl overflow-hidden shadow-2xl border border-outline-variant/15 flex flex-col">
+<!-- Modal Header -->
+<div class="px-8 py-6 border-b border-outline-variant/10 flex justify-between items-start">
+<div>
+<span class="text-[0.6875rem] font-bold tracking-[0.05em] uppercase text-on-tertiary-container bg-tertiary-container/30 px-2 py-0.5 rounded-sm mb-2 inline-block">Configuration Suite</span>
+<h2 class="text-2xl font-headline font-bold text-on-surface">Filter Preset Engine</h2>
+<p class="text-on-surface-variant text-sm mt-1">Define cross-collection logic for unified intelligence stream.</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors p-2 hover:bg-surface-bright rounded-full">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Content -->
+<div class="p-8 space-y-8 overflow-y-auto max-h-[716px]">
+<!-- Preset Identity Section -->
+<div class="grid grid-cols-1 gap-6">
+<div class="space-y-2">
+<label class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-primary-fixed-dim">Preset Name</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 text-on-surface focus:outline-none focus:border-primary/50 font-body placeholder:text-slate-600" placeholder="e.g. High Impact Sentiment" type="text" value="Tier 1 US Sources"/>
+</div>
+</div>
+<!-- Configuration Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-primary-fixed-dim">Filter Type</label>
+<div class="relative group">
+<select class="w-full appearance-none bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 text-on-surface focus:outline-none focus:border-primary/50 font-body">
+<option>Source Tier</option>
+<option>Sentiment</option>
+<option>Region</option>
+<option>Language</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-primary-fixed-dim">Target Operator</label>
+<div class="relative group">
+<select class="w-full appearance-none bg-surface-container-lowest border border-outline-variant/20 rounded px-4 py-3 text-on-surface focus:outline-none focus:border-primary/50 font-body">
+<option>Include Exactly</option>
+<option>Exclude These</option>
+<option>Contains Any</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">tune</span>
+</div>
+</div>
+</div>
+<!-- Multi-Value Selection Area -->
+<div class="bg-surface-container-lowest/50 rounded-lg p-6 border border-white/5">
+<label class="text-[0.6875rem] font-bold uppercase tracking-[0.05em] text-primary-fixed-dim block mb-4">Selected Values</label>
+<div class="flex flex-wrap gap-2">
+<span class="flex items-center gap-2 px-3 py-1.5 bg-surface-bright/50 border border-primary/20 rounded text-xs text-on-surface">
+                                Tier 1: Premium Publishers
+                                <button class="material-symbols-outlined text-[1rem] hover:text-error transition-colors">close</button>
+</span>
+<span class="flex items-center gap-2 px-3 py-1.5 bg-surface-bright/50 border border-primary/20 rounded text-xs text-on-surface">
+                                Tier 2: Specialized Tech
+                                <button class="material-symbols-outlined text-[1rem] hover:text-error transition-colors">close</button>
+</span>
+<span class="flex items-center gap-2 px-3 py-1.5 bg-surface-bright/50 border border-primary/20 rounded text-xs text-on-surface">
+                                US: East Coast Hubs
+                                <button class="material-symbols-outlined text-[1rem] hover:text-error transition-colors">close</button>
+</span>
+<button class="px-3 py-1.5 bg-transparent border border-dashed border-outline-variant/40 rounded text-xs text-on-surface-variant hover:border-primary transition-all flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">add</span> Add Source
+                            </button>
+</div>
+</div>
+<!-- Impact Preview Bento Module -->
+<div class="grid grid-cols-12 gap-4">
+<div class="col-span-12 md:col-span-5 bg-gradient-to-br from-secondary/10 to-transparent p-5 rounded-lg border border-secondary/10 relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" style="font-variation-settings: 'FILL' 1;">analytics</span>
+</div>
+<span class="text-[0.625rem] font-bold uppercase tracking-widest text-secondary block mb-1">Impact Preview</span>
+<div class="flex items-baseline gap-2">
+<span class="text-4xl font-headline font-extrabold text-secondary">12</span>
+<span class="text-sm font-medium text-on-surface-variant">Searches</span>
+</div>
+<p class="text-[0.75rem] text-slate-400 mt-2 leading-relaxed">This filter will be automatically synchronized with 12 active monitoring searches across 4 workspace collections.</p>
+</div>
+<div class="col-span-12 md:col-span-7 bg-surface-container p-5 rounded-lg border border-white/5 flex flex-col justify-center">
+<div class="flex items-center gap-4">
+<div class="flex-1">
+<div class="flex justify-between items-end mb-1">
+<span class="text-[0.6875rem] font-medium text-slate-400">Projected Data Reduction</span>
+<span class="text-[0.6875rem] font-bold text-secondary">42.8%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-[42.8%] rounded-full shadow-[0_0_10px_rgba(78,222,163,0.3)]"></div>
+</div>
+</div>
+<div class="h-10 w-10 flex items-center justify-center rounded bg-surface-bright/50">
+<span class="material-symbols-outlined text-secondary text-xl">speed</span>
+</div>
+</div>
+<p class="text-[0.6875rem] text-slate-500 mt-3 italic">Calculated based on 30-day historical data volume.</p>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-8 py-6 bg-surface-container-highest/40 border-t border-outline-variant/10 flex items-center justify-between">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-error transition-colors px-4 py-2 font-medium text-sm rounded hover:bg-error/10">
+<span class="material-symbols-outlined text-sm">delete</span>
+                        Discard Preset
+                    </button>
+<div class="flex gap-4">
+<button class="px-6 py-2.5 bg-transparent border border-outline-variant/30 text-primary hover:bg-surface-bright transition-all text-sm font-semibold rounded">
+                            Cancel
+                        </button>
+<button class="px-8 py-2.5 bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all text-sm font-bold rounded flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">save</span>
+                            Save Preset Logic
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Visual Artifacts -->
+<div class="fixed top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+<div class="fixed bottom-1/4 right-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] pointer-events-none -z-10"></div>
+</body></html>

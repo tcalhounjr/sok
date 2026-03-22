@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Fork Search - Synthetix Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-surface": "#dae2fd",
+              "surface-tint": "#bcc7de",
+              "surface-container-low": "#131b2e",
+              "outline-variant": "#45464d",
+              "on-secondary-fixed": "#002113",
+              "tertiary-fixed": "#ffddb8",
+              "surface-dim": "#0b1326",
+              "on-tertiary-fixed": "#2a1700",
+              "surface-container-lowest": "#060e20",
+              "surface-container": "#171f33",
+              "primary-fixed": "#d8e3fb",
+              "on-primary-fixed": "#111c2d",
+              "tertiary-container": "#251400",
+              "on-surface": "#dae2fd",
+              "surface-variant": "#2d3449",
+              "on-surface-variant": "#c6c6cd",
+              "on-background": "#dae2fd",
+              "surface-bright": "#31394d",
+              "on-secondary-fixed-variant": "#005236",
+              "on-tertiary-fixed-variant": "#653e00",
+              "surface-container-highest": "#2d3449",
+              "primary": "#bcc7de",
+              "on-secondary-container": "#00311f",
+              "on-tertiary": "#472a00",
+              "error-container": "#93000a",
+              "tertiary": "#ffb95f",
+              "secondary-container": "#00a572",
+              "on-primary": "#263143",
+              "on-secondary": "#003824",
+              "on-primary-fixed-variant": "#3c475a",
+              "on-tertiary-container": "#b47300",
+              "secondary": "#4edea3",
+              "on-error": "#690005",
+              "secondary-fixed-dim": "#4edea3",
+              "tertiary-fixed-dim": "#ffb95f",
+              "secondary-fixed": "#6ffbbe",
+              "surface-container-high": "#222a3d",
+              "outline": "#909097",
+              "on-error-container": "#ffdad6",
+              "inverse-on-surface": "#283044",
+              "background": "#0b1326",
+              "surface": "#0b1326",
+              "primary-fixed-dim": "#bcc7de",
+              "inverse-primary": "#545f73",
+              "primary-container": "#0c1829",
+              "on-primary-container": "#768197",
+              "error": "#ffb4ab"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(45, 52, 73, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-secondary/30">
+<!-- Background Content (Blurred Search Detail View) -->
+<div class="fixed inset-0 z-0 overflow-hidden flex flex-col blur-md grayscale-[0.2] opacity-40 pointer-events-none">
+<!-- TopAppBar Placeholder -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0b1326] border-b border-white/5">
+<div class="text-xl font-bold tracking-tighter text-[#bcc7de] font-headline">Synthetix Analytics</div>
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest"></div>
+</div>
+</header>
+<!-- Main Content Layout Placeholder -->
+<div class="flex flex-1 pt-16">
+<aside class="w-64 bg-[#131b2e] h-full border-r border-white/5"></aside>
+<main class="flex-1 p-12 overflow-hidden">
+<div class="max-w-5xl mx-auto space-y-8">
+<div class="h-12 w-2/3 bg-surface-container-high rounded"></div>
+<div class="grid grid-cols-3 gap-6">
+<div class="h-64 bg-surface-container rounded-lg"></div>
+<div class="h-64 bg-surface-container rounded-lg"></div>
+<div class="h-64 bg-surface-container rounded-lg"></div>
+</div>
+<div class="h-96 bg-surface-container rounded-lg"></div>
+</div>
+</main>
+</div>
+</div>
+<!-- Modal Overlay -->
+<div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-6">
+<!-- Fork Search Modal Container -->
+<div class="relative w-full max-w-2xl overflow-hidden glass-panel border border-outline-variant/15 rounded-xl shadow-2xl animate-in fade-in zoom-in duration-300">
+<!-- Modal Header -->
+<div class="px-8 pt-8 pb-6 border-b border-outline-variant/10">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label text-xs uppercase tracking-[0.1em] text-on-tertiary-container bg-tertiary-container/30 px-2 py-1 rounded">Action: Fork Collection</span>
+<button class="text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<h2 class="font-headline text-2xl font-extrabold tracking-tight text-primary">Fork and Derivative Search</h2>
+<p class="text-sm text-on-surface-variant mt-1">Create a new curated collection based on existing intelligence parameters.</p>
+</div>
+<!-- Modal Body -->
+<div class="px-8 py-6 space-y-8 max-h-[716px] overflow-y-auto">
+<!-- Origin Info -->
+<div class="bg-surface-container-low p-4 rounded-lg flex items-center gap-4">
+<div class="w-10 h-10 flex items-center justify-center rounded bg-surface-container-highest">
+<span class="material-symbols-outlined text-primary" data-icon="account_tree">account_tree</span>
+</div>
+<div>
+<p class="font-label text-[10px] uppercase tracking-wider text-slate-500">Parent intelligence feed</p>
+<p class="font-headline font-bold text-on-surface">Global Semiconductor Shift</p>
+</div>
+</div>
+<!-- Input Field: New Name -->
+<div class="space-y-3">
+<label class="font-label text-xs uppercase tracking-wider text-on-surface-variant flex justify-between">
+                        Derivative Search Name
+                        <span class="text-slate-500 normal-case">Required</span>
+</label>
+<input class="w-full bg-surface-container-highest border-none focus:ring-1 focus:ring-secondary/50 rounded-lg h-12 px-4 text-on-surface placeholder:text-slate-500 font-medium transition-all" placeholder="Enter a name for your fork..." type="text" value="Global Semiconductor Shift (Derivative)"/>
+</div>
+<!-- Read-Only Configuration Section -->
+<div class="space-y-4">
+<div class="flex items-center justify-between border-b border-outline-variant/10 pb-2">
+<h3 class="font-headline text-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="settings_input_component">settings_input_component</span>
+                            Inherited Intelligence Logic
+                        </h3>
+<span class="text-[10px] text-slate-500 italic">Configuration Locked (Read-only)</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Keywords -->
+<div class="space-y-2">
+<label class="font-label text-[11px] uppercase tracking-widest text-on-surface-variant/70">Keywords &amp; Tokens</label>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 bg-surface-container text-xs font-mono text-secondary rounded flex items-center gap-1.5">
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+                                    #TSMC
+                                </span>
+<span class="px-2 py-1 bg-surface-container text-xs font-mono text-secondary rounded flex items-center gap-1.5">
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+                                    Lithography
+                                </span>
+<span class="px-2 py-1 bg-surface-container text-xs font-mono text-secondary rounded flex items-center gap-1.5">
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+                                    Supply_Chain
+                                </span>
+<span class="px-2 py-1 bg-surface-container text-xs font-mono text-secondary rounded flex items-center gap-1.5">
+<span class="w-1 h-1 rounded-full bg-secondary"></span>
+                                    R&amp;D_Expenditure
+                                </span>
+</div>
+</div>
+<!-- Filters -->
+<div class="space-y-2">
+<label class="font-label text-[11px] uppercase tracking-widest text-on-surface-variant/70">Active Constraints</label>
+<div class="space-y-2">
+<div class="flex items-center justify-between text-xs bg-surface-container-highest/40 p-2 rounded">
+<span class="text-slate-400">Region</span>
+<span class="font-bold text-primary">APAC, North America</span>
+</div>
+<div class="flex items-center justify-between text-xs bg-surface-container-highest/40 p-2 rounded">
+<span class="text-slate-400">Sentiment Threshold</span>
+<span class="font-bold text-primary">&gt; 0.65 Neutral/Pos</span>
+</div>
+<div class="flex items-center justify-between text-xs bg-surface-container-highest/40 p-2 rounded">
+<span class="text-slate-400">Media Tiers</span>
+<span class="font-bold text-primary">Tier 1 &amp; Institutional</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Modal Info Note -->
+<div class="p-3 bg-secondary/5 border-l-2 border-secondary rounded-r-lg flex gap-3">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="info">info</span>
+<p class="text-xs text-on-surface/80 leading-relaxed">
+                        Forking creates an isolated instance. Future changes to the original <strong>Global Semiconductor Shift</strong> collection will not propagate to this derivative.
+                    </p>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="px-8 py-6 bg-surface-container-lowest/50 flex items-center justify-end gap-4 border-t border-outline-variant/10">
+<button class="px-5 py-2.5 text-sm font-bold text-primary-fixed-dim hover:bg-surface-bright/20 rounded-lg transition-all">
+                    Cancel
+                </button>
+<button class="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold text-sm shadow-lg shadow-primary/5 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="fork_right">fork_right</span>
+                    Fork and Create
+                </button>
+</div>
+</div>
+</div>
+</body></html>
