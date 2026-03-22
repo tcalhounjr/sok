@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useNavigate } from 'react-router-dom';
 import { Search, RefreshCw, SlidersHorizontal, Pin, Clock, Library } from 'lucide-react';
 import { GET_SEARCHES, GET_COLLECTIONS } from '../apollo/queries';
 import { SearchCard } from '../components/search/SearchCard';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatusDot } from '../components/ui/StatusDot';
-import { Search as SearchType, Collection } from '../types';
+import type { Search as SearchType, Collection } from '../types';
 
 const TABS = ['All Queries', 'High Priority', 'Archived'] as const;
 type Tab = typeof TABS[number];

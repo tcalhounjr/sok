@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { SlidersHorizontal, Trash2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
-import { Badge } from '../ui/Badge';
 import { KeywordTag } from '../ui/KeywordTag';
 import { CREATE_FILTER_PRESET, UPDATE_FILTER_PRESET, DELETE_FILTER_PRESET } from '../../apollo/mutations';
 import { GET_FILTER_PRESETS, GET_SEARCHES } from '../../apollo/queries';
-import { FilterPreset } from '../../types';
+import type { FilterPreset } from '../../types';
 
 const FILTER_TYPES = ['SOURCE_TIER','SENTIMENT','REGION','LANGUAGE','DATE_RANGE'] as const;
 const OPERATORS = ['Include Exactly','Exclude','Must Contain','At Least One Of'] as const;

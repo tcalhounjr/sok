@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Skeleton } from '../ui/Skeleton';
-import { DailyVolume } from '../../types';
+import type { DailyVolume } from '../../types';
 
 interface VolumeChartProps {
   data: DailyVolume[];

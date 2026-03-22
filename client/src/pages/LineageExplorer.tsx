@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_SEARCH_LINEAGE } from '../apollo/queries';
 import { Skeleton } from '../components/ui/Skeleton';
 import { LineageNodeCard } from '../components/lineage/LineageNodeCard';
 import { NodeInspector } from '../components/lineage/NodeInspector';
 import { LineageStats } from '../components/lineage/LineageStats';
-import { LineageNode } from '../types';
+import type { LineageNode } from '../types';
 
 export function LineageExplorer() {
   const { id } = useParams<{ id: string }>();

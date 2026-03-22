@@ -1,26 +1,15 @@
-import { MoreVertical, Sliders, TrendingUp, AlertTriangle, Zap } from 'lucide-react';
+import { MoreVertical, Sliders, AlertTriangle, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from '../../types';
+import type { Search } from '../../types';
 import { StatusDot } from '../ui/StatusDot';
 import { KeywordTag } from '../ui/KeywordTag';
-import { timeAgo, cn } from '../../lib/utils';
+import { timeAgo } from '../../lib/utils';
 
 interface SearchCardProps {
   search: Search;
-  onDelete?: (id: string) => void;
 }
 
-function GrowthIndicator({ search }: { search: Search }) {
-  const hasDerivatives = (search.derivatives?.length ?? 0) > 0;
-  if (hasDerivatives) return (
-    <span className="text-secondary text-label-sm font-body flex items-center gap-1">
-      <TrendingUp size={11} /> +{search.derivatives!.length * 412} GROWTH
-    </span>
-  );
-  return <span className="text-on_surface_variant text-label-sm font-body">GROWTH: STEADY</span>;
-}
-
-export function SearchCard({ search, onDelete }: SearchCardProps) {
+export function SearchCard({ search }: SearchCardProps) {
   const navigate = useNavigate();
   const filterCount = search.filters?.length ?? 0;
   const isLive = search.status === 'active';

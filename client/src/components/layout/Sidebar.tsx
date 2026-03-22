@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Search, Sliders, FolderOpen,
-  TrendingUp, Archive, HelpCircle, LogOut, GitBranch,
+  LayoutDashboard, Search, Sliders,
+  Archive, HelpCircle, GitBranch,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 

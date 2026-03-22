@@ -1,5 +1,5 @@
 import { StatusDot } from '../ui/StatusDot';
-import { LineageNode } from '../../types';
+import type { LineageNode } from '../../types';
 
 interface LineageNodeCardProps {
   node: LineageNode;

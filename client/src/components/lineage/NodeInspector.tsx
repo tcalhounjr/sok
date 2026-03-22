@@ -1,6 +1,6 @@
 import { Play, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { LineageNode } from '../../types';
+import type { LineageNode } from '../../types';
 
 interface NodeInspectorProps {
   node: LineageNode;

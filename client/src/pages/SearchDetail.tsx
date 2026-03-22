@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { GitBranch, Clock, Eye, TrendingUp, X } from 'lucide-react';
 import { GET_SEARCH } from '../apollo/queries';
 import { REMOVE_FILTER_FROM_SEARCH } from '../apollo/mutations';

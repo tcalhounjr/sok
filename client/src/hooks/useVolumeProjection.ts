@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLazyQuery } from '@apollo/client';
+import { useLazyQuery } from '@apollo/client/react';
 import { GET_VOLUME_PROJECTION } from '../apollo/queries';
-import { VolumeProjection } from '../types';
+import type { VolumeProjection } from '../types';
 
 const DEBOUNCE_MS = 400;
 const MIN_KEYWORD_LENGTH = 3;
@@ -11,7 +11,7 @@ export function useVolumeProjection(keywords: string[]) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [fetchProjection, { loading }] = useLazyQuery(GET_VOLUME_PROJECTION, {
-    onCompleted: data => setProjection(data?.volumeProjection ?? null),
+    onCompleted: (data: { volumeProjection?: VolumeProjection | null }) => setProjection(data?.volumeProjection ?? null),
   });
 
   useEffect(() => {

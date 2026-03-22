@@ -1,5 +1,5 @@
 import { Skeleton } from '../ui/Skeleton';
-import { TopTopicCount } from '../../types';
+import type { TopTopicCount } from '../../types';
 
 interface TopicCloudProps {
   topics: TopTopicCount[];

@@ -1,5 +1,5 @@
 import { Skeleton } from '../ui/Skeleton';
-import { SentimentBreakdown as SentimentBreakdownType } from '../../types';
+import type { SentimentBreakdown as SentimentBreakdownType } from '../../types';
 
 interface SentimentBreakdownProps {
   data: SentimentBreakdownType | null;

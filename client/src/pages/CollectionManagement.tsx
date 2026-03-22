@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { Plus } from 'lucide-react';
 import { GET_COLLECTIONS, GET_SEARCHES } from '../apollo/queries';
 import {
@@ -12,7 +12,7 @@ import { StatusDot } from '../components/ui/StatusDot';
 import { CollectionSidebar } from '../components/collections/CollectionSidebar';
 import { CollectionSearchCard } from '../components/collections/CollectionSearchCard';
 import { CollaboratorAvatars } from '../components/collections/CollaboratorAvatars';
-import { Collection, Search } from '../types';
+import type { Collection, Search } from '../types';
 
 export function CollectionManagement() {
   const [activeColId, setActiveColId] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function CollectionManagement() {
 
   const [createCollection] = useMutation(CREATE_COLLECTION, {
     refetchQueries: [{ query: GET_COLLECTIONS }],
-    onCompleted: d => {
+    onCompleted: (d: { createCollection: { id: string } }) => {
       setActiveColId(d.createCollection.id);
       setShowNewCol(false);
       setNewColName('');

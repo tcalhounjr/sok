@@ -1,6 +1,6 @@
 import { Plus, ChevronRight, Search as SearchIcon } from 'lucide-react';
 import { Skeleton } from '../ui/Skeleton';
-import { Collection } from '../../types';
+import type { Collection } from '../../types';
 
 interface CollectionSidebarProps {
   collections: Collection[];

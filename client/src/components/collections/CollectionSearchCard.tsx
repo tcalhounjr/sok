@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { StatusDot } from '../ui/StatusDot';
-import { Search } from '../../types';
+import type { Search } from '../../types';
 import { timeAgo } from '../../lib/utils';
 
 interface CollectionSearchCardProps {

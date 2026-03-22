@@ -1,5 +1,5 @@
 import { Skeleton } from '../ui/Skeleton';
-import { TopSourceCount } from '../../types';
+import type { TopSourceCount } from '../../types';
 
 interface SourceRankingsProps {
   sources: TopSourceCount[];

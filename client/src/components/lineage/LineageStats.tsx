@@ -1,5 +1,5 @@
 import { StatusDot } from '../ui/StatusDot';
-import { SearchLineage } from '../../types';
+import type { SearchLineage } from '../../types';
 
 interface LineageStatsProps {
   lineage: SearchLineage;

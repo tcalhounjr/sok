@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { FolderOpen, MoreVertical, Edit, Share2, Plus } from 'lucide-react';
 import { GET_FILTER_PRESETS } from '../apollo/queries';
-import { FilterPreset } from '../types';
+import type { FilterPreset } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Badge } from '../components/ui/Badge';
 import { FilterPresetModal } from '../components/filters/FilterPresetModal';

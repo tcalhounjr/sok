@@ -1,15 +1,6 @@
 import { Search, Bell, Settings } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
-const titles: Record<string, string> = {
-  '/':           'Search Library',
-  '/search':     'Search Builder',
-  '/presets':    'Preset Library',
-  '/lineage':    'Lineage Explorer',
-  '/trends':     'Narrative Trends',
-  '/collections':'Collections',
-};
-
 const tabs: Record<string, string[]> = {
   '/':        ['Analytics', 'Narratives', 'Sources', 'Collections'],
   '/presets': ['Curation Tools'],
