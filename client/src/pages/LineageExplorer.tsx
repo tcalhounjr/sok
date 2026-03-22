@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client';
 import { GET_SEARCH_LINEAGE } from '../apollo/queries';
 import { Skeleton } from '../components/ui/Skeleton';
 import { LineageNodeCard } from '../components/lineage/LineageNodeCard';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client';
 import { SlidersHorizontal, Trash2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { KeywordTag } from '../ui/KeywordTag';

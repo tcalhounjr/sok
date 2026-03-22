@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client';
 import { GET_NARRATIVE_TRENDS } from '../apollo/queries';
 import { StatusDot } from '../components/ui/StatusDot';
 import { Badge } from '../components/ui/Badge';

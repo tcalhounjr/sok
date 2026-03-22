@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client';
 import { FolderOpen, MoreVertical, Edit, Share2, Plus } from 'lucide-react';
 import { GET_FILTER_PRESETS } from '../apollo/queries';
 import type { FilterPreset } from '../types';

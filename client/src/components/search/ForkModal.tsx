@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@apollo/client/react';
+import { useMutation } from '@apollo/client';
 import { GitBranch, Info, Lock } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { KeywordTag } from '../ui/KeywordTag';
@@ -21,7 +21,7 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
 
   const [forkSearch, { loading }] = useMutation(FORK_SEARCH, {
     refetchQueries: [{ query: GET_SEARCHES }],
-    onCompleted: (d: { forkSearch: { id: string } }) => {
+    onCompleted: d => {
       onClose();
       navigate(`/search/${d.forkSearch.id}`);
     },

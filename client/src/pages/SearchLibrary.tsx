@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { Search, RefreshCw, SlidersHorizontal, Pin, Clock, Library } from 'lucide-react';
 import { GET_SEARCHES, GET_COLLECTIONS } from '../apollo/queries';

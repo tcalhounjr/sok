@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client';
 import { CheckCircle, AlertTriangle, ChevronDown } from 'lucide-react';
 import { CREATE_SEARCH, UPDATE_SEARCH } from '../apollo/mutations';
 import { GET_SEARCH, GET_SEARCHES } from '../apollo/queries';
@@ -33,7 +33,7 @@ export function SearchCreateEdit() {
   useQuery(GET_SEARCH, {
     variables: { id },
     skip: !isEdit,
-    onCompleted: (d: { search: { name: string; keywords: string[]; startDate: string; endDate: string } | null }) => {
+    onCompleted: d => {
       if (d?.search) {
         setName(d.search.name);
         setKeywords(d.search.keywords ?? []);
@@ -47,7 +47,7 @@ export function SearchCreateEdit() {
 
   const [createSearch, { loading: creating }] = useMutation(CREATE_SEARCH, {
     refetchQueries: [{ query: GET_SEARCHES }],
-    onCompleted: (d: { createSearch: { id: string } }) => navigate(`/search/${d.createSearch.id}`),
+    onCompleted: d => navigate(`/search/${d.createSearch.id}`),
   });
 
   const [updateSearch, { loading: updating }] = useMutation(UPDATE_SEARCH, {
