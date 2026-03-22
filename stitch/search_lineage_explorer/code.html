@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Search Lineage Explorer | NarrativeTracker</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#909097",
+              "surface-container-lowest": "#060e20",
+              "tertiary-container": "#251400",
+              "on-error": "#690005",
+              "surface-variant": "#2d3449",
+              "on-primary-fixed": "#111c2d",
+              "on-surface": "#dae2fd",
+              "surface-container-highest": "#2d3449",
+              "on-secondary": "#003824",
+              "inverse-surface": "#dae2fd",
+              "on-tertiary-fixed-variant": "#653e00",
+              "on-secondary-fixed-variant": "#005236",
+              "primary": "#bcc7de",
+              "primary-container": "#0c1829",
+              "surface-bright": "#31394d",
+              "on-surface-variant": "#c6c6cd",
+              "on-tertiary-fixed": "#2a1700",
+              "on-primary-fixed-variant": "#3c475a",
+              "tertiary-fixed-dim": "#ffb95f",
+              "on-secondary-fixed": "#002113",
+              "error": "#ffb4ab",
+              "surface-container-low": "#131b2e",
+              "on-tertiary": "#472a00",
+              "primary-fixed-dim": "#bcc7de",
+              "on-tertiary-container": "#b47300",
+              "on-secondary-container": "#00311f",
+              "inverse-on-surface": "#283044",
+              "on-error-container": "#ffdad6",
+              "surface-tint": "#bcc7de",
+              "secondary": "#4edea3",
+              "inverse-primary": "#545f73",
+              "on-primary-container": "#768197",
+              "on-primary": "#263143",
+              "outline-variant": "#45464d",
+              "tertiary-fixed": "#ffddb8",
+              "secondary-fixed-dim": "#4edea3",
+              "surface": "#0b1326",
+              "background": "#0b1326",
+              "on-background": "#dae2fd",
+              "primary-fixed": "#d8e3fb",
+              "secondary-fixed": "#6ffbbe",
+              "surface-dim": "#0b1326",
+              "secondary-container": "#00a572",
+              "tertiary": "#ffb95f",
+              "error-container": "#93000a",
+              "surface-container": "#171f33",
+              "surface-container-high": "#222a3d"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+        }
+        .canvas-grid {
+            background-image: radial-gradient(#2d3449 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .node-connector {
+            background: linear-gradient(90deg, transparent 0%, #45464d 50%, transparent 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-secondary/30">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0b1326] dark:bg-slate-950 border-b border-white/5 backdrop-blur-xl font-['Manrope'] antialiased">
+<div class="flex items-center gap-8">
+<h1 class="text-xl font-bold tracking-tight text-slate-100">NarrativeTracker</h1>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Search</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Collections</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Filters</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Trends</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:bg-white/5 transition-all duration-200 rounded">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-400 hover:bg-white/5 transition-all duration-200 rounded">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<div class="h-8 w-8 rounded-full bg-surface-bright overflow-hidden border border-outline-variant/30">
+<img alt="Analyst Profile" class="w-full h-full object-cover" data-alt="Professional analyst profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOy8G-9pwIT2Lgi2y0LIfdhCXunU0H731D-8EkFAS0XUR6OWm5L1uZFN9dj1KvcgUKYAoywxS6eX83hUEUEEYbFRuVaBwfeXNsK236Zf9-gZ3CKuU4W3UHq9pQZsIYtM7W6JA2KWFgkEcG8L-2owgbC16G_5ucXn_AKg5RJIIyphhk4iD9LxMtvLoxnqrTHyHUbwpVIbK7Rd5tQiRzntdo00sk8BY66h_DA2VJq2D8M7dTYEcvrIDHuUyl1Y8PBxVrkTj8VOlIKVL1"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 flex flex-col py-6 bg-[#131b2e] dark:bg-slate-900 border-r border-white/5 font-['Inter'] text-sm tracking-wide uppercase font-medium">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-1">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+</div>
+<div>
+<div class="text-lg font-black text-white normal-case">Media Intelligence</div>
+<div class="text-[10px] text-slate-500 tracking-widest">Analytical Lens v1.0</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors rounded" href="#">
+<span class="material-symbols-outlined" data-icon="push_pin">push_pin</span>
+<span>Pinned</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors rounded" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Recent</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors rounded" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span>Libraries</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 bg-white/5 text-[#4edea3] border-r-2 border-[#4edea3] rounded-sm transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span>Lineage</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors rounded" href="#">
+<span class="material-symbols-outlined" data-icon="source">source</span>
+<span>Sources</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<button class="w-full mb-6 py-3 px-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded flex items-center justify-center gap-2 transition-all active:scale-[0.98] normal-case">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                New Search
+            </button>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="archive">archive</span>
+<span>Archive</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-[calc(100vh-64px)] canvas-grid">
+<!-- Header Section -->
+<header class="mb-12 max-w-5xl mx-auto flex justify-between items-end">
+<div>
+<span class="text-xs font-bold uppercase tracking-[0.2em] text-on-tertiary-container bg-tertiary-container/30 px-2 py-1 rounded">Neo4j Relationship Model</span>
+<h2 class="text-3xl font-extrabold font-headline mt-4 text-on-surface">Search Lineage Explorer</h2>
+<p class="text-on-surface-variant mt-2 max-w-xl">Visualize the evolution of your intelligence queries. Map derivative searches, filter inheritance, and explore the provenance of insights.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 bg-surface-container-high hover:bg-surface-bright transition-colors text-primary text-sm font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+                    Graph Filters
+                </button>
+<button class="px-4 py-2 bg-secondary text-on-secondary text-sm font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="share">share</span>
+                    Export Tree
+                </button>
+</div>
+</header>
+<!-- Lineage Tree Visualization (D3 style layout) -->
+<div class="relative max-w-6xl mx-auto min-h-[600px] flex flex-col items-center py-10 overflow-visible">
+<!-- Root Node -->
+<div class="relative z-10">
+<div class="w-[280px] p-5 bg-surface-container border-l-4 border-secondary shadow-xl transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-3">
+<span class="text-[10px] font-mono text-secondary-fixed-dim">UUID: 8f2a-001</span>
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+</div>
+<h3 class="font-headline font-bold text-lg text-on-surface mb-2">Global Supply Chain Fragility</h3>
+<div class="flex flex-wrap gap-1.5 mb-4">
+<span class="text-[10px] bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">Keywords: Trade, Port</span>
+<span class="text-[10px] bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">Region: Global</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-white/5">
+<span class="text-[10px] text-on-surface-variant italic">Root Search</span>
+<button class="text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-base" data-icon="fork_right">fork_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Vertical Connection -->
+<div class="h-16 w-[1px] bg-gradient-to-b from-secondary to-outline-variant"></div>
+<!-- Mid-level Row -->
+<div class="flex gap-20 relative">
+<!-- Horizontal connection line -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-[calc(100%-100px)] h-[1px] bg-outline-variant"></div>
+<!-- Child 1 -->
+<div class="relative pt-8">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 h-8 w-[1px] bg-outline-variant"></div>
+<div class="w-[280px] p-5 bg-surface-container border-l-4 border-primary shadow-xl transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-3">
+<span class="text-[10px] font-mono text-primary-fixed-dim">UUID: 4d1b-002</span>
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" data-icon="account_tree">account_tree</span>
+</div>
+<h3 class="font-headline font-bold text-lg text-on-surface mb-2">South China Sea Congestion</h3>
+<div class="flex flex-wrap gap-1.5 mb-4">
+<span class="text-[10px] bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">Parent: Fragility</span>
+<span class="text-[10px] bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">Region: APAC</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-white/5">
+<span class="text-[10px] text-on-surface-variant italic">Derivative v1.2</span>
+<button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-base" data-icon="fork_right">fork_right</span>
+</button>
+</div>
+</div>
+<!-- Vertical connection to Grandchild -->
+<div class="h-16 w-[1px] bg-outline-variant mx-auto"></div>
+<!-- Grandchild -->
+<div class="w-[280px] p-5 bg-surface-container/50 backdrop-blur-sm border-l-4 border-outline shadow-lg transition-all hover:scale-[1.02] cursor-pointer group">
+<h3 class="font-headline font-bold text-base text-on-surface mb-2">Semiconductor Delay Impact</h3>
+<div class="flex flex-wrap gap-1.5 mb-3">
+<span class="text-[10px] bg-surface-container-highest/50 px-2 py-0.5 rounded text-on-surface-variant">Filter: High Tech</span>
+</div>
+<div class="flex justify-between items-center pt-2 border-t border-white/5">
+<span class="text-[10px] text-on-surface-variant italic text-xs">Deep Dive</span>
+<span class="material-symbols-outlined text-xs text-outline" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+</div>
+</div>
+<!-- Child 2 -->
+<div class="relative pt-8">
+<div class="absolute top-0 left-1/2 -translate-x-1/2 h-8 w-[1px] bg-outline-variant"></div>
+<div class="w-[280px] p-5 bg-surface-container border-l-4 border-tertiary shadow-xl transition-all hover:scale-[1.02] cursor-pointer group">
+<div class="flex justify-between items-start mb-3">
+<span class="text-[10px] font-mono text-tertiary-fixed-dim">UUID: 2e9c-003</span>
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-sm" data-icon="trending_up">trending_up</span>
+</div>
+<h3 class="font-headline font-bold text-lg text-on-surface mb-2">European Logistics Shifts</h3>
+<div class="flex flex-wrap gap-1.5 mb-4">
+<span class="text-[10px] bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">Parent: Fragility</span>
+<span class="text-[10px] bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">Route: Northern</span>
+</div>
+<div class="flex justify-between items-center pt-3 border-t border-white/5">
+<span class="text-[10px] text-on-surface-variant italic">Forked v2.0</span>
+<button class="text-tertiary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-base" data-icon="fork_right">fork_right</span>
+</button>
+</div>
+</div>
+<!-- Vertical connection to Grandchild row -->
+<div class="h-16 w-[1px] bg-outline-variant mx-auto"></div>
+<div class="flex gap-4">
+<div class="w-[130px] p-3 bg-surface-container border-l-2 border-error/50 shadow-md">
+<h4 class="text-[11px] font-bold text-on-surface truncate">Suez Blockage</h4>
+<p class="text-[9px] text-on-surface-variant mt-1">Status: Closed</p>
+</div>
+<div class="w-[130px] p-3 bg-surface-container border-l-2 border-secondary/50 shadow-md">
+<h4 class="text-[11px] font-bold text-on-surface truncate">Rail Alternatives</h4>
+<p class="text-[9px] text-on-surface-variant mt-1">Status: Active</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Node Detail Panel (Asymmetric Floating Overlay) -->
+<div class="fixed right-8 top-32 w-80 bg-surface-container-high/90 backdrop-blur-xl border border-white/5 p-6 shadow-2xl">
+<div class="flex justify-between items-start mb-6">
+<h4 class="font-headline font-bold text-on-surface">Node Inspector</h4>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-lg" data-icon="close">close</span></button>
+</div>
+<div class="space-y-6">
+<div>
+<label class="text-[10px] font-bold text-secondary uppercase tracking-widest block mb-2">Inherited Filters</label>
+<div class="space-y-2">
+<div class="flex items-center justify-between text-xs bg-surface-container p-2 rounded">
+<span class="text-on-surface-variant">Sentiment</span>
+<span class="text-secondary font-mono">NEGATIVE</span>
+</div>
+<div class="flex items-center justify-between text-xs bg-surface-container p-2 rounded">
+<span class="text-on-surface-variant">Source Type</span>
+<span class="text-secondary font-mono">TIER-1_MEDIA</span>
+</div>
+</div>
+</div>
+<div>
+<label class="text-[10px] font-bold text-primary uppercase tracking-widest block mb-2">Performance Metrics</label>
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-surface-container-low p-3">
+<div class="text-[10px] text-on-surface-variant">Relevance</div>
+<div class="text-xl font-headline font-bold text-on-surface">94%</div>
+</div>
+<div class="bg-surface-container-low p-3">
+<div class="text-[10px] text-on-surface-variant">Node Depth</div>
+<div class="text-xl font-headline font-bold text-on-surface">Lvl 3</div>
+</div>
+</div>
+</div>
+<div class="pt-4 space-y-3">
+<button class="w-full py-3 bg-primary text-on-primary text-sm font-bold flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        Execute Search
+                    </button>
+<button class="w-full py-3 border border-outline-variant/30 text-on-surface text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="edit">edit</span>
+                        Fork &amp; Modify
+                    </button>
+</div>
+</div>
+</div>
+<!-- Relationship Stats Bar -->
+<div class="max-w-6xl mx-auto mt-20 grid grid-cols-4 gap-6">
+<div class="bg-surface-container p-6 border-t-2 border-secondary/30">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary" data-icon="hub">hub</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Total Nodes</span>
+</div>
+<div class="text-3xl font-headline font-extrabold text-on-surface">1,402</div>
+</div>
+<div class="bg-surface-container p-6 border-t-2 border-primary/30">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary" data-icon="share">share</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Avg Branching</span>
+</div>
+<div class="text-3xl font-headline font-extrabold text-on-surface">2.4</div>
+</div>
+<div class="bg-surface-container p-6 border-t-2 border-tertiary/30">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="account_tree">account_tree</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Max Depth</span>
+</div>
+<div class="text-3xl font-headline font-extrabold text-on-surface">9 Levels</div>
+</div>
+<div class="bg-surface-container p-6 border-t-2 border-error/30">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-error" data-icon="emergency">emergency</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Orphan Queries</span>
+</div>
+<div class="text-3xl font-headline font-extrabold text-on-surface">12</div>
+</div>
+</div>
+</main>
+<!-- Map Context Footer (Subtle) -->
+<footer class="ml-64 p-6 bg-surface-container-low border-t border-white/5 flex justify-between items-center">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-xs text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                System Status: Latency <span class="font-mono text-secondary">24ms</span>
+</div>
+<div class="h-4 w-[1px] bg-white/10"></div>
+<div class="text-[10px] text-on-surface-variant uppercase tracking-widest">Neo4j Bolt Protocol Active</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[10px] text-on-surface-variant">Global Map Context:</span>
+<div class="w-24 h-12 rounded overflow-hidden opacity-50 grayscale hover:grayscale-0 transition-all cursor-crosshair">
+<img alt="Navigation Map" class="w-full h-full object-cover" data-alt="Abstract world map focused on trade routes" data-location="Global Ocean Trade Routes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX7UvfFwvp2SD-8sCmx802hQndpt0cXiBHaDrBUfuicIWKKuxWb3jf-NgAwpstFh-74u9xn0dKBl0VJdg4c8IbN3OFZz_7lZimc6NDuATxEu1z30EvvKvWfpQnsJgd1kz2HmVyvIrj_JtZtSILjXl6D2nS1DzpxWV5GFgBM5anJSZf6sbagTfyVJ-i84gsIcr4COlGWhAZ__e_Jp43OSB5949UE-LdsmhUJGF4CN4cvppuBMSjMlv0UCzXULOMkoSlqVnaKi8TA1CC"/>
+</div>
+</div>
+</footer>
+</body></html>

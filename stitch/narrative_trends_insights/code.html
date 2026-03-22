@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NarrativeTracker | Narrative Trends &amp; Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#909097",
+              "surface-container-lowest": "#060e20",
+              "tertiary-container": "#251400",
+              "on-error": "#690005",
+              "surface-variant": "#2d3449",
+              "on-primary-fixed": "#111c2d",
+              "on-surface": "#dae2fd",
+              "surface-container-highest": "#2d3449",
+              "on-secondary": "#003824",
+              "inverse-surface": "#dae2fd",
+              "on-tertiary-fixed-variant": "#653e00",
+              "on-secondary-fixed-variant": "#005236",
+              "primary": "#bcc7de",
+              "primary-container": "#0c1829",
+              "surface-bright": "#31394d",
+              "on-surface-variant": "#c6c6cd",
+              "on-tertiary-fixed": "#2a1700",
+              "on-primary-fixed-variant": "#3c475a",
+              "tertiary-fixed-dim": "#ffb95f",
+              "on-secondary-fixed": "#002113",
+              "error": "#ffb4ab",
+              "surface-container-low": "#131b2e",
+              "on-tertiary": "#472a00",
+              "primary-fixed-dim": "#bcc7de",
+              "on-tertiary-container": "#b47300",
+              "on-secondary-container": "#00311f",
+              "inverse-on-surface": "#283044",
+              "on-error-container": "#ffdad6",
+              "surface-tint": "#bcc7de",
+              "secondary": "#4edea3",
+              "inverse-primary": "#545f73",
+              "on-primary-container": "#768197",
+              "on-primary": "#263143",
+              "outline-variant": "#45464d",
+              "tertiary-fixed": "#ffddb8",
+              "secondary-fixed-dim": "#4edea3",
+              "surface": "#0b1326",
+              "background": "#0b1326",
+              "on-background": "#dae2fd",
+              "primary-fixed": "#d8e3fb",
+              "secondary-fixed": "#6ffbbe",
+              "surface-dim": "#0b1326",
+              "secondary-container": "#00a572",
+              "tertiary": "#ffb95f",
+              "error-container": "#93000a",
+              "surface-container": "#171f33",
+              "surface-container-high": "#222a3d"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(45, 52, 73, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #bcc7de 0%, #0c1829 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#0b1326] dark:bg-slate-950 bg-[#131b2e] dark:bg-slate-900/50 backdrop-blur-xl border-b border-white/5">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tight text-slate-100 font-headline">NarrativeTracker</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Search</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Collections</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">Filters</a>
+<a class="text-[#bcc7de] border-b-2 border-[#bcc7de] pb-2 font-semibold" href="#">Trends</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-white/5 transition-all duration-200 text-slate-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 hover:bg-white/5 transition-all duration-200 text-slate-200">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border border-white/10">
+<img alt="Analyst Profile" data-alt="Analyst profile avatar placeholder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhcl7l2AtCCwtBBv4zlRkypmqjOdsyhWMkogKVe0OTTWwQO50DFyIPUQTGrkumMmPPctQhXpoHKlmPwWQybhTDaxuYHXpj4cj4ZHSMCguVy9figGdNLTwlWTU0lCx7NOxKXAuomKvxGKQa6LU3VbiQwk7qN-0SmC3kiorgnc2z61KI_Xy2Oxb_aRdz6HSEoxEAo03qrownIJ9z-sE0BbEuYL8c0V2S9MzqEt9Qv-0fQzzGbHX0Zm6Pq5XNwcDjUlnTdLZ2PINt2y-M"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 flex flex-col py-6 bg-[#131b2e] dark:bg-slate-900 border-r border-white/5 z-40">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-1">
+<div class="w-6 h-6 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-xs text-primary">analytics</span>
+</div>
+<span class="text-lg font-black text-white font-headline">Media Intelligence</span>
+</div>
+<span class="text-[10px] tracking-widest uppercase font-medium text-slate-500">Analytical Lens v1.0</span>
+</div>
+<div class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors group" href="#">
+<span class="material-symbols-outlined text-xl">push_pin</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Pinned</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-white/5 text-[#4edea3] border-r-2 border-[#4edea3] transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined text-xl">history</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Recent</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">layers</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Libraries</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Lineage</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">source</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Sources</span>
+</a>
+</div>
+<div class="px-4 pt-6 mt-6 border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">archive</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Archive</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">help_outline</span>
+<span class="font-['Inter'] text-sm tracking-wide uppercase font-medium">Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-8 min-h-screen">
+<!-- Header & Control Bar -->
+<section class="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
+<div>
+<span class="text-xs font-bold uppercase tracking-widest text-on-tertiary-container bg-tertiary-container px-2 py-1 mb-3 inline-block rounded-sm">Current Narrative</span>
+<h1 class="text-4xl font-extrabold font-headline tracking-tight text-on-surface">Global Semiconductor Supply Shifts</h1>
+<p class="text-on-surface-variant mt-2 max-w-2xl font-body">Detailed analytical view of media volume, sentiment trends, and source distribution for the 7-day trailing period.</p>
+</div>
+<!-- Context Toggle -->
+<div class="bg-surface-container-low p-1 rounded-lg flex items-center">
+<button class="px-4 py-2 text-sm font-semibold rounded-md bg-surface-container-high text-primary shadow-sm">Current Search</button>
+<button class="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Parent Narrative</button>
+<div class="w-px h-4 bg-outline-variant/20 mx-2"></div>
+<button class="px-3 py-2 flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">calendar_today</span>
+<span class="text-xs font-bold">L7D</span>
+</button>
+</div>
+</section>
+<!-- Bento Grid Insights -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Coverage Volume Over Time (Hero Chart) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-low rounded-xl p-6 border border-white/5">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h3 class="text-lg font-bold font-headline">Coverage Volume Over Time</h3>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-wider">Historical Mentions vs Forecast</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-xs font-medium text-on-surface-variant">Active</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary/40"></span>
+<span class="text-xs font-medium text-on-surface-variant">Baseline</span>
+</div>
+</div>
+</div>
+<!-- Mock Chart Visualization -->
+<div class="h-64 flex items-end justify-between gap-1 relative overflow-hidden group">
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-surface/40 backdrop-blur-[2px]">
+<span class="text-xs font-mono text-primary bg-surface-container-highest px-3 py-1 rounded">Volume Peak: 14,202 mentions</span>
+</div>
+<div class="w-full h-full flex items-end gap-1">
+<!-- Chart Bars -->
+<div class="flex-1 bg-surface-variant h-[40%] rounded-t-sm opacity-50"></div>
+<div class="flex-1 bg-surface-variant h-[35%] rounded-t-sm opacity-50"></div>
+<div class="flex-1 bg-surface-variant h-[45%] rounded-t-sm opacity-50"></div>
+<div class="flex-1 bg-secondary h-[55%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[75%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[90%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[65%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[80%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[45%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[60%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[85%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[70%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[50%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[40%] rounded-t-sm"></div>
+<div class="flex-1 bg-secondary h-[30%] rounded-t-sm"></div>
+</div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">
+<span>Oct 14</span>
+<span>Oct 15</span>
+<span>Oct 16</span>
+<span>Oct 17</span>
+<span>Oct 18</span>
+<span>Oct 19</span>
+<span>Today</span>
+</div>
+</div>
+<!-- Sentiment Breakdown -->
+<div class="col-span-12 lg:col-span-4 bg-surface-container p-6 rounded-xl flex flex-col justify-between">
+<div>
+<h3 class="text-lg font-bold font-headline mb-1">Sentiment Breakdown</h3>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-wider mb-6">Aggregate Tone Analysis</p>
+<div class="space-y-6">
+<div class="relative h-4 w-full bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="h-full bg-secondary w-[24%]" title="Positive"></div>
+<div class="h-full bg-tertiary w-[52%]" title="Neutral"></div>
+<div class="h-full bg-error w-[24%]" title="Negative"></div>
+</div>
+<div class="grid grid-cols-1 gap-3">
+<div class="flex justify-between items-center p-3 rounded bg-surface-container-low">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-sm">sentiment_satisfied</span>
+<span class="text-sm font-medium">Positive</span>
+</div>
+<span class="text-sm font-bold text-secondary">24%</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded bg-surface-container-low">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-sm">sentiment_neutral</span>
+<span class="text-sm font-medium">Neutral</span>
+</div>
+<span class="text-sm font-bold text-tertiary">52%</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded bg-surface-container-low border-l-2 border-error">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-sm">sentiment_dissatisfied</span>
+<span class="text-sm font-medium">Negative</span>
+</div>
+<span class="text-sm font-bold text-error">24%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-white/5 mt-4">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold italic">Shift: +4.2% Negative vs Last Period</p>
+</div>
+</div>
+<!-- Top Co-occurring Topics (Bento Small) -->
+<div class="col-span-12 md:col-span-5 bg-surface-container-high p-6 rounded-xl">
+<h3 class="text-lg font-bold font-headline mb-6">Top Co-occurring Topics</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 bg-primary/10 text-primary text-xl font-bold rounded-lg cursor-default hover:bg-primary/20 transition-colors">#supplychain</span>
+<span class="px-3 py-1.5 bg-secondary/10 text-secondary text-sm font-medium rounded-lg">#lithium</span>
+<span class="px-3 py-1.5 bg-surface-variant text-on-surface-variant text-xs font-medium rounded-lg">#ev_adoption</span>
+<span class="px-5 py-3 bg-tertiary/10 text-tertiary text-2xl font-black rounded-lg">#trade_war</span>
+<span class="px-3 py-1.5 bg-surface-variant text-on-surface-variant text-sm font-medium rounded-lg">#nvidia</span>
+<span class="px-4 py-2 bg-primary/10 text-primary text-lg font-semibold rounded-lg">#scarcity</span>
+<span class="px-3 py-1.5 bg-surface-variant text-on-surface-variant text-sm font-medium rounded-lg">#automotive</span>
+<span class="px-2 py-1 bg-error/10 text-error text-[10px] font-bold uppercase rounded-lg">#sanctions</span>
+</div>
+</div>
+<!-- Top Sources (Bento Large) -->
+<div class="col-span-12 md:col-span-7 bg-surface-container-low p-6 rounded-xl border border-white/5">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold font-headline">Top Sources</h3>
+<button class="text-xs font-bold text-primary hover:underline uppercase tracking-tighter">View All 142 Sources</button>
+</div>
+<div class="space-y-4">
+<div class="group">
+<div class="flex justify-between text-xs font-bold mb-1 px-1">
+<span class="text-on-surface">Reuters Intelligence</span>
+<span class="text-on-surface-variant">2,482 hits</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient w-[85%] rounded-full group-hover:brightness-125 transition-all"></div>
+</div>
+</div>
+<div class="group">
+<div class="flex justify-between text-xs font-bold mb-1 px-1">
+<span class="text-on-surface">The Financial Times</span>
+<span class="text-on-surface-variant">1,920 hits</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient w-[65%] rounded-full group-hover:brightness-125 transition-all"></div>
+</div>
+</div>
+<div class="group">
+<div class="flex justify-between text-xs font-bold mb-1 px-1">
+<span class="text-on-surface">Bloomberg Terminal</span>
+<span class="text-on-surface-variant">1,811 hits</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient w-[62%] rounded-full group-hover:brightness-125 transition-all"></div>
+</div>
+</div>
+<div class="group">
+<div class="flex justify-between text-xs font-bold mb-1 px-1">
+<span class="text-on-surface">TechCrunch Narrative</span>
+<span class="text-on-surface-variant">1,204 hits</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full primary-gradient w-[45%] rounded-full group-hover:brightness-125 transition-all"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Insights / Feed -->
+<section class="mt-12">
+<div class="flex items-center gap-4 mb-6">
+<h2 class="text-2xl font-bold font-headline">Recent Narrative Shifts</h2>
+<div class="h-px flex-1 bg-outline-variant/10"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Shift Alert 1 -->
+<div class="glass-panel p-5 rounded-lg border-l-4 border-secondary">
+<div class="flex justify-between items-start mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Emergent Topic</span>
+<div class="flex gap-1 items-center">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-[10px] font-medium text-secondary">LIVE</span>
+</div>
+</div>
+<h4 class="font-bold text-sm mb-2">Sub-narrative: AI Hardware Demand</h4>
+<p class="text-xs text-on-surface-variant line-clamp-2">Significant spike in mentions related to proprietary AI chips and local manufacturing capabilities.</p>
+</div>
+<!-- Shift Alert 2 -->
+<div class="glass-panel p-5 rounded-lg border-l-4 border-tertiary">
+<div class="flex justify-between items-start mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-tertiary">Sentiment Shift</span>
+<span class="text-[10px] font-medium text-on-surface-variant">2h ago</span>
+</div>
+<h4 class="font-bold text-sm mb-2">Neutral Transition: Export Bans</h4>
+<p class="text-xs text-on-surface-variant line-clamp-2">High-volume coverage transitioning from critical to descriptive as legislative impacts stabilize.</p>
+</div>
+<!-- Shift Alert 3 -->
+<div class="glass-panel p-5 rounded-lg border-l-4 border-error">
+<div class="flex justify-between items-start mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-error">Anomaly Detected</span>
+<span class="text-[10px] font-medium text-on-surface-variant">5h ago</span>
+</div>
+<h4 class="font-bold text-sm mb-2">Coverage Gap: Southeast Asia</h4>
+<p class="text-xs text-on-surface-variant line-clamp-2">Unexpected drop in regional reporting from Tier 1 sources despite active regulatory changes.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 primary-gradient text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-2xl" data-weight="fill">add</span>
+</button>
+</body></html>
