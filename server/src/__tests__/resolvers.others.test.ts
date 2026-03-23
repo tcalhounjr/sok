@@ -1,0 +1,680 @@
+/**
+ * Unit tests: others.ts resolvers
+ * Covers: FilterPreset CRUD, Collection CRUD, relationship mutations,
+ *         volumeProjection, narrativeTrends, article/topic field resolvers.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const { mockRunQuery } = vi.hoisted(() => ({
+  mockRunQuery: vi.fn(),
+}));
+
+vi.mock('../neo4j/driver.js', () => ({
+  runQuery: mockRunQuery,
+  toObject: (node: { properties: Record<string, unknown> }) => ({ ...node.properties }),
+}));
+
+vi.stubGlobal('crypto', {
+  randomUUID: vi.fn(() => 'test-uuid-5678'),
+});
+
+import {
+  filterPresetQueries,
+  filterPresetMutations,
+  filterPresetFieldResolvers,
+  collectionQueries,
+  collectionMutations,
+  collectionFieldResolvers,
+  articleQueries,
+  articleFieldResolvers,
+  topicQueries,
+  topicFieldResolvers,
+  narrativeTrendsQuery,
+  volumeProjectionQuery,
+} from '../resolvers/others.js';
+
+// ---------------------------------------------------------------------------
+// Minimal shims
+// ---------------------------------------------------------------------------
+
+function makeInt(n: number) {
+  return { toNumber: () => n };
+}
+
+function makeNode(properties: Record<string, unknown>) {
+  return { properties };
+}
+
+function makeRecord(fields: Record<string, unknown>) {
+  return { get: (key: string) => fields[key] };
+}
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+const FP_PROPS    = { id: 'fp-1',     name: 'Tier 1',       type: 'SOURCE_TIER', value: '1' };
+const COL_PROPS   = { id: 'col-1',    name: 'My Collection', description: 'desc', createdAt: '2025-01-01' };
+const ART_PROPS   = { id: 'art-1',    headline: 'Big Story', body: 'full text', url: 'https://x', publishedAt: '2025-06-01', sentiment: 'NEUTRAL' };
+const SRC_PROPS   = { id: 'src-1',    name: 'Reuters',       domain: 'reuters.com', tier: 1, region: 'GLOBAL', language: 'en' };
+const TOPIC_PROPS = { id: 'top-1',    label: 'Technology',   category: 'Sector' };
+const SEARCH_PROPS = {
+  id: 'search-1', name: 'Test Search', keywords: ['semiconductor'],
+  startDate: '2025-01-01', endDate: '2025-12-31',
+  status: 'active', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z',
+};
+
+const CTX = { driver: {} as any };
+
+beforeEach(() => {
+  mockRunQuery.mockReset();
+});
+
+// ===========================================================================
+// FilterPreset Queries
+// ===========================================================================
+
+describe('filterPresetQueries.filterPreset', () => {
+  it('should return the matching filter preset when found', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ f: makeNode(FP_PROPS) })]);
+
+    const result = await filterPresetQueries.filterPreset(null, { id: 'fp-1' }, CTX);
+
+    expect(result).toMatchObject({ id: 'fp-1', name: 'Tier 1' });
+  });
+
+  it('should return null when no filter preset matches the given id', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await filterPresetQueries.filterPreset(null, { id: 'ghost-id' }, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('filterPresetQueries.filterPresets', () => {
+  it('should return all filter presets ordered by name', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ f: makeNode(FP_PROPS) }),
+      makeRecord({ f: makeNode({ ...FP_PROPS, id: 'fp-2', name: 'US Region' }) }),
+    ]);
+
+    const result = await filterPresetQueries.filterPresets(null, null, CTX);
+
+    expect(result).toHaveLength(2);
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('ORDER BY f.name');
+  });
+
+  it('should return an empty array when no filter presets exist', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await filterPresetQueries.filterPresets(null, null, CTX);
+
+    expect(result).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// FilterPreset Mutations
+// ===========================================================================
+
+describe('filterPresetMutations.createFilterPreset', () => {
+  it('should persist a new filter preset node and return it', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ f: makeNode(FP_PROPS) })]);
+
+    const result = await filterPresetMutations.createFilterPreset(
+      null,
+      { input: { name: 'Tier 1', type: 'SOURCE_TIER', value: '1' } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'fp-1', type: 'SOURCE_TIER' });
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('CREATE (f:FilterPreset');
+  });
+});
+
+describe('filterPresetMutations.updateFilterPreset', () => {
+  it('should update the specified fields and return the updated preset', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ f: makeNode({ ...FP_PROPS, name: 'Renamed Preset' }) })]);
+
+    const result = await filterPresetMutations.updateFilterPreset(
+      null,
+      { id: 'fp-1', input: { name: 'Renamed Preset' } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ name: 'Renamed Preset' });
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('f.name = $name');
+  });
+
+  it('should include only non-empty fields in the SET clause', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ f: makeNode(FP_PROPS) })]);
+
+    await filterPresetMutations.updateFilterPreset(
+      null,
+      { id: 'fp-1', input: { value: 'POSITIVE' } },
+      CTX,
+    );
+
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('f.value = $value');
+    expect(cypher).not.toContain('f.name');
+  });
+});
+
+describe('filterPresetMutations.deleteFilterPreset', () => {
+  it('should detach-delete the filter preset and return success result', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await filterPresetMutations.deleteFilterPreset(null, { id: 'fp-1' }, CTX);
+
+    expect(result).toEqual({
+      id: 'fp-1',
+      success: true,
+      message: expect.stringContaining('deleted'),
+    });
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('DETACH DELETE f');
+  });
+});
+
+describe('filterPresetMutations.applyFilterToSearch', () => {
+  it('should create HAS_FILTER relationship and return updated search node', async () => {
+    mockRunQuery.mockResolvedValueOnce([]); // MERGE
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    const result = await filterPresetMutations.applyFilterToSearch(
+      null,
+      { filterId: 'fp-1', searchId: 'search-1' },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'search-1' });
+    const [, mergeCypher] = mockRunQuery.mock.calls[0];
+    expect(mergeCypher).toContain('MERGE (s)-[:HAS_FILTER');
+  });
+});
+
+describe('filterPresetMutations.removeFilterFromSearch', () => {
+  it('should delete HAS_FILTER relationship and return updated search node', async () => {
+    mockRunQuery.mockResolvedValueOnce([]); // DELETE
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    const result = await filterPresetMutations.removeFilterFromSearch(
+      null,
+      { filterId: 'fp-1', searchId: 'search-1' },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'search-1' });
+    const [, deleteCypher] = mockRunQuery.mock.calls[0];
+    expect(deleteCypher).toContain('DELETE r');
+  });
+});
+
+describe('filterPresetFieldResolvers.searches', () => {
+  it('should return all searches that reference this filter preset', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    const result = await filterPresetFieldResolvers.searches(FP_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'search-1' });
+  });
+});
+
+// ===========================================================================
+// Collection Queries
+// ===========================================================================
+
+describe('collectionQueries.collection', () => {
+  it('should return the matching collection when found', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode(COL_PROPS) })]);
+
+    const result = await collectionQueries.collection(null, { id: 'col-1' }, CTX);
+
+    expect(result).toMatchObject({ id: 'col-1', name: 'My Collection' });
+  });
+
+  it('should return null when no collection exists for the given id', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await collectionQueries.collection(null, { id: 'missing-col' }, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('collectionQueries.collections', () => {
+  it('should return all collections ordered by name', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ c: makeNode(COL_PROPS) }),
+      makeRecord({ c: makeNode({ ...COL_PROPS, id: 'col-2', name: 'Zcollection' }) }),
+    ]);
+
+    const result = await collectionQueries.collections(null, null, CTX);
+
+    expect(result).toHaveLength(2);
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('ORDER BY c.name');
+  });
+});
+
+// ===========================================================================
+// Collection Mutations
+// ===========================================================================
+
+describe('collectionMutations.createCollection', () => {
+  it('should persist a new collection and use empty string for missing description', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode(COL_PROPS) })]);
+
+    const result = await collectionMutations.createCollection(
+      null,
+      { input: { name: 'My Collection' } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'col-1' });
+    const params = mockRunQuery.mock.calls[0][2] as any;
+    expect(params.desc).toBe('');
+  });
+
+  it('should persist the provided description when one is supplied', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode(COL_PROPS) })]);
+
+    await collectionMutations.createCollection(
+      null,
+      { input: { name: 'My Collection', description: 'Useful collection' } },
+      CTX,
+    );
+
+    const params = mockRunQuery.mock.calls[0][2] as any;
+    expect(params.desc).toBe('Useful collection');
+  });
+});
+
+describe('collectionMutations.updateCollection', () => {
+  it('should update the collection name and return the updated node', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode({ ...COL_PROPS, name: 'Renamed' }) })]);
+
+    const result = await collectionMutations.updateCollection(
+      null,
+      { id: 'col-1', input: { name: 'Renamed' } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ name: 'Renamed' });
+  });
+
+  it('should update only description when that is the sole provided field', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode(COL_PROPS) })]);
+
+    await collectionMutations.updateCollection(
+      null,
+      { id: 'col-1', input: { description: 'New desc' } },
+      CTX,
+    );
+
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('c.description = $description');
+    expect(cypher).not.toContain('c.name');
+  });
+});
+
+describe('collectionMutations.deleteCollection', () => {
+  it('should detach-delete the collection and return success result with preservation note', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await collectionMutations.deleteCollection(null, { id: 'col-1' }, CTX);
+
+    expect(result).toEqual({
+      id: 'col-1',
+      success: true,
+      message: expect.stringContaining('preserved'),
+    });
+  });
+});
+
+describe('collectionMutations.addSearchToCollection', () => {
+  it('should create CONTAINS relationship and return the updated collection', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode(COL_PROPS) })]);
+
+    const result = await collectionMutations.addSearchToCollection(
+      null,
+      { searchId: 'search-1', collectionId: 'col-1' },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'col-1' });
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MERGE (col)-[:CONTAINS');
+  });
+});
+
+describe('collectionMutations.removeSearchFromCollection', () => {
+  it('should delete CONTAINS relationship and return the updated collection', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeNode(COL_PROPS) })]);
+
+    const result = await collectionMutations.removeSearchFromCollection(
+      null,
+      { searchId: 'search-1', collectionId: 'col-1' },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'col-1' });
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('DELETE r');
+  });
+});
+
+describe('collectionFieldResolvers.searches', () => {
+  it('should return searches in this collection ordered by updatedAt desc', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    const result = await collectionFieldResolvers.searches(COL_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('ORDER BY s.updatedAt DESC');
+  });
+});
+
+// ===========================================================================
+// Article Queries
+// ===========================================================================
+
+describe('articleQueries.article', () => {
+  it('should return the matching article when found', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ a: makeNode(ART_PROPS) })]);
+
+    const result = await articleQueries.article(null, { id: 'art-1' }, CTX);
+
+    expect(result).toMatchObject({ id: 'art-1', headline: 'Big Story' });
+  });
+
+  it('should return null when no article matches', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await articleQueries.article(null, { id: 'none' }, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('articleQueries.articles', () => {
+  it('should return all articles when called with no filters', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ a: makeNode(ART_PROPS) })]);
+
+    const result = await articleQueries.articles(null, {}, CTX);
+
+    expect(result).toHaveLength(1);
+  });
+
+  it('should scope query to a search when searchId is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await articleQueries.articles(null, { searchId: 'search-1' }, CTX);
+
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (s:Search {id: $searchId})-[:MATCHES]');
+  });
+
+  it('should filter by sentiment when sentiment is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await articleQueries.articles(null, { sentiment: 'POSITIVE' }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('a.sentiment = $sentiment');
+    expect(params).toMatchObject({ sentiment: 'POSITIVE' });
+  });
+
+  it('should add source match clause when sourceId is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await articleQueries.articles(null, { sourceId: 'src-1' }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (a)-[:PUBLISHED_BY]->(src:Source {id: $sourceId})');
+    expect(params).toMatchObject({ sourceId: 'src-1' });
+  });
+});
+
+// ===========================================================================
+// Article Field Resolvers
+// ===========================================================================
+
+describe('articleFieldResolvers.source', () => {
+  it('should return the source for the article', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ src: makeNode(SRC_PROPS) })]);
+
+    const result = await articleFieldResolvers.source(ART_PROPS as any, null, CTX);
+
+    expect(result).toMatchObject({ id: 'src-1' });
+  });
+
+  it('should return null when no source is linked to the article', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await articleFieldResolvers.source(ART_PROPS as any, null, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('articleFieldResolvers.author', () => {
+  it('should return null when no author is linked', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await articleFieldResolvers.author(ART_PROPS as any, null, CTX);
+
+    expect(result).toBeNull();
+  });
+
+  it('should return the author when one exists', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ aut: makeNode({ id: 'aut-1', name: 'Jane Doe' }) }),
+    ]);
+
+    const result = await articleFieldResolvers.author(ART_PROPS as any, null, CTX);
+
+    expect(result).toMatchObject({ id: 'aut-1' });
+  });
+});
+
+describe('articleFieldResolvers.topics', () => {
+  it('should return topics tagged on the article', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ t: makeNode(TOPIC_PROPS) })]);
+
+    const result = await articleFieldResolvers.topics(ART_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'top-1' });
+  });
+});
+
+// ===========================================================================
+// Topic Queries and Field Resolvers
+// ===========================================================================
+
+describe('topicQueries.topics', () => {
+  it('should return all topics ordered by label', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ t: makeNode(TOPIC_PROPS) })]);
+
+    const result = await topicQueries.topics(null, null, CTX);
+
+    expect(result).toHaveLength(1);
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('ORDER BY t.label');
+  });
+});
+
+describe('topicFieldResolvers.coOccursWith', () => {
+  it('should return co-occurring topics with frequency counts', async () => {
+    const otherTopic = makeNode({ id: 'top-2', label: 'Economics', category: 'Sector' });
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ other: otherTopic, freq: makeInt(5) }),
+    ]);
+
+    const result = await topicFieldResolvers.coOccursWith(TOPIC_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ frequency: 5 });
+    expect(result[0].topic).toMatchObject({ id: 'top-2' });
+  });
+
+  it('should return an empty array when no co-occurring topics exist', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await topicFieldResolvers.coOccursWith(TOPIC_PROPS as any, null, CTX);
+
+    expect(result).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// Volume Projection (DD-2)
+// ===========================================================================
+
+describe('volumeProjectionQuery.volumeProjection', () => {
+  it('should return estimated volume and top sources matching the keywords', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ estimatedVolume: makeInt(42) })]);
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ src: makeNode(SRC_PROPS), cnt: makeInt(10) }),
+    ]);
+
+    const result = await volumeProjectionQuery.volumeProjection(
+      null, { keywords: ['semiconductor'] }, CTX,
+    );
+
+    expect(result.estimatedVolume).toBe(42);
+    expect(result.topSources).toHaveLength(1);
+    expect(result.topSources[0].count).toBe(10);
+    expect(result.note).toContain('EST. VOLUME');
+  });
+
+  it('should return zero volume when no articles match the keywords', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ estimatedVolume: makeInt(0) })]);
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await volumeProjectionQuery.volumeProjection(
+      null, { keywords: ['unknownterm12345'] }, CTX,
+    );
+
+    expect(result.estimatedVolume).toBe(0);
+    expect(result.topSources).toEqual([]);
+  });
+
+  it('should pass all keywords to the cypher query', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ estimatedVolume: makeInt(0) })]);
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await volumeProjectionQuery.volumeProjection(
+      null, { keywords: ['chip', 'fab', 'TSMC'] }, CTX,
+    );
+
+    const params = mockRunQuery.mock.calls[0][2] as any;
+    expect(params.keywords).toEqual(['chip', 'fab', 'TSMC']);
+  });
+});
+
+// ===========================================================================
+// Narrative Trends (DD-3)
+// ===========================================================================
+
+describe('narrativeTrendsQuery.narrativeTrends', () => {
+  function makeVolRecord(date: string, volume: number, pos: number, neu: number, neg: number) {
+    return makeRecord({
+      day:      { toString: () => date },
+      volume:   makeInt(volume),
+      positive: makeInt(pos),
+      neutral:  makeInt(neu),
+      negative: makeInt(neg),
+    });
+  }
+
+  it('should aggregate sentiment counts and compute percentages correctly', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeVolRecord('2025-01-01', 10, 4, 4, 2),
+      makeVolRecord('2025-01-02', 10, 6, 2, 2),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ src: makeNode(SRC_PROPS), cnt: makeInt(8) }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'My Search' })]);
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1' }, CTX,
+    );
+
+    expect(result.totalArticles).toBe(20);
+    expect(result.sentimentBreakdown.positive).toBe(10);
+    expect(result.sentimentBreakdown.neutral).toBe(6);
+    expect(result.sentimentBreakdown.negative).toBe(4);
+    expect(result.sentimentBreakdown.positivePercent).toBe(50);
+    expect(result.sentimentBreakdown.periodShift).toBeNull();
+    expect(result.searchName).toBe('My Search');
+  });
+
+  it('should return zero percents and empty arrays when no articles match the search', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'Empty Search' })]);
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-empty' }, CTX,
+    );
+
+    expect(result.totalArticles).toBe(0);
+    expect(result.sentimentBreakdown.positivePercent).toBe(0);
+    expect(result.volumeOverTime).toEqual([]);
+    expect(result.topSources).toEqual([]);
+    expect(result.topTopics).toEqual([]);
+  });
+
+  it('should use the default interval value of day when none is supplied', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'S' })]);
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1' }, CTX,
+    );
+
+    expect(result.interval).toBe('day');
+  });
+
+  it('should propagate custom interval value when one is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'S' })]);
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1', interval: 'week' }, CTX,
+    );
+
+    expect(result.interval).toBe('week');
+  });
+
+  it('should fall back to searchId as name when no search record is returned', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]); // no name record
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-fallback' }, CTX,
+    );
+
+    expect(result.searchName).toBe('search-fallback');
+  });
+});

@@ -5,6 +5,7 @@ import { expressMiddleware } from '@apollo/server/express4';
 import { typeDefs } from './schema/typeDefs.js';
 import { resolvers } from './resolvers/index.js';
 import { getDriver } from './neo4j/driver.js';
+import { applySchema } from './neo4j/schema.js';
 import { Driver } from 'neo4j-driver';
 import 'dotenv/config';
 
@@ -13,6 +14,9 @@ export interface ApolloContext {
 }
 
 const driver = getDriver();
+
+// SOK-7: apply constraints and indexes on every boot (IF NOT EXISTS — safe to repeat)
+await applySchema(driver);
 
 // Allowed origins — local dev + Vercel production.
 // Set CORS_ORIGIN in Railway env vars once you have your Vercel URL.

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { CheckCircle, AlertTriangle, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ChevronDown, XCircle } from 'lucide-react';
 import { CREATE_SEARCH, UPDATE_SEARCH } from '../apollo/mutations';
 import { GET_SEARCH, GET_SEARCHES } from '../apollo/queries';
 import { useVolumeProjection } from '../hooks/useVolumeProjection';
@@ -30,7 +30,7 @@ export function SearchCreateEdit() {
   const [endDate, setEndDate]     = useState('2025-12-31');
   const [topic, setTopic]         = useState('Technology');
 
-  useQuery(GET_SEARCH, {
+  const { loading: loadingExisting } = useQuery(GET_SEARCH, {
     variables: { id },
     skip: !isEdit,
     onCompleted: d => {
@@ -45,17 +45,25 @@ export function SearchCreateEdit() {
 
   const { projection, loading: projLoading } = useVolumeProjection(keywords);
 
+  const [mutationError, setMutationError] = useState<string | null>(null);
+
   const [createSearch, { loading: creating }] = useMutation(CREATE_SEARCH, {
     refetchQueries: [{ query: GET_SEARCHES }],
     onCompleted: d => navigate(`/search/${d.createSearch.id}`),
+    onError: err => setMutationError(err.message),
   });
 
   const [updateSearch, { loading: updating }] = useMutation(UPDATE_SEARCH, {
     refetchQueries: [{ query: GET_SEARCHES }],
     onCompleted: () => navigate(`/search/${id}`),
+    onError: err => setMutationError(err.message),
   });
 
-  const loading = creating || updating;
+  const loading = creating || updating || loadingExisting;
+
+  const [touched, setTouched] = useState(false);
+  const nameInvalid     = touched && !name.trim();
+  const keywordsInvalid = touched && keywords.length === 0;
 
   function addKeyword() {
     const trimmed = kwInput.trim().replace(/^["']|["']$/g, '');
@@ -64,6 +72,8 @@ export function SearchCreateEdit() {
   }
 
   function handleSubmit(deploy: boolean) {
+    setTouched(true);
+    setMutationError(null);
     if (!name.trim() || keywords.length === 0) return;
     const input = { name, keywords, startDate, endDate, status: deploy ? 'active' : 'draft' };
     if (isEdit) {
@@ -86,6 +96,13 @@ export function SearchCreateEdit() {
           </p>
         </div>
 
+        {mutationError && (
+          <div role="alert" className="max-w-2xl mb-5 p-3 rounded-sm bg-error/10 ghost-border flex items-start gap-2">
+            <XCircle size={14} className="text-error mt-0.5 flex-shrink-0" />
+            <p className="text-body-sm text-error font-body">{mutationError}</p>
+          </div>
+        )}
+
         <div className="space-y-5 max-w-2xl">
           {/* Section 1: Identity */}
           <div className="card p-6">
@@ -96,9 +113,13 @@ export function SearchCreateEdit() {
                 <input
                   value={name}
                   onChange={e => setName(e.target.value)}
+                  aria-invalid={nameInvalid}
                   placeholder="e.g. Emerging Semiconductor Narrative 2025"
-                  className="w-full px-3 py-2.5 bg-surface_container_high rounded-sm text-body-md text-on_surface placeholder:text-on_surface_variant ghost-border focus:outline-none focus:border-primary/40 transition-colors"
+                  className={`w-full px-3 py-2.5 bg-surface_container_high rounded-sm text-body-md text-on_surface placeholder:text-on_surface_variant ghost-border focus:outline-none focus:border-primary/40 transition-colors ${nameInvalid ? 'border-error/50' : ''}`}
                 />
+                {nameInvalid && (
+                  <p role="alert" className="text-label-sm text-error font-body mt-1">Search name is required.</p>
+                )}
               </div>
               <div>
                 <label className="overline text-on_surface_variant block mb-1.5">Temporal Scope</label>
@@ -132,7 +153,7 @@ export function SearchCreateEdit() {
             <div className="space-y-4">
               <div>
                 <p className="overline text-on_surface_variant mb-2">INCLUDE:</p>
-                <div className="min-h-12 p-3 bg-surface_container_high rounded-sm ghost-border flex flex-wrap gap-2">
+                <div className={`min-h-12 p-3 bg-surface_container_high rounded-sm ghost-border flex flex-wrap gap-2 ${keywordsInvalid ? 'border-error/50' : ''}`}>
                   {keywords.map(kw => (
                     <KeywordTag key={kw} label={kw} onRemove={() => setKeywords(prev => prev.filter(k => k !== kw))} />
                   ))}
@@ -144,6 +165,9 @@ export function SearchCreateEdit() {
                     className="bg-transparent text-body-sm text-secondary placeholder:text-on_surface_variant focus:outline-none min-w-24"
                   />
                 </div>
+                {keywordsInvalid && (
+                  <p role="alert" className="text-label-sm text-error font-body mt-1">At least one keyword is required.</p>
+                )}
               </div>
               <div>
                 <p className="overline text-on_surface_variant mb-2">EXCLUDE:</p>
@@ -200,7 +224,7 @@ export function SearchCreateEdit() {
             <span className="text-label-sm text-on_surface_variant font-body">API COST EST. $0.04 / 1k Hits</span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => handleSubmit(false)} disabled={loading} className="btn-secondary text-xs">
+            <button onClick={() => handleSubmit(false)} disabled={loading} className="btn-secondary text-xs disabled:opacity-40">
               Save as Draft
             </button>
             <button
