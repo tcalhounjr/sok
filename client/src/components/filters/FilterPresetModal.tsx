@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation } from '@apollo/client';
 import { SlidersHorizontal, Trash2 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { KeywordTag } from '../ui/KeywordTag';
 import { CREATE_FILTER_PRESET, UPDATE_FILTER_PRESET, DELETE_FILTER_PRESET } from '../../apollo/mutations';
-import { GET_FILTER_PRESETS, GET_SEARCHES } from '../../apollo/queries';
+import { GET_FILTER_PRESETS } from '../../apollo/queries';
 import type { FilterPreset } from '../../types';
 
 const FILTER_TYPES = ['SOURCE_TIER','SENTIMENT','REGION','LANGUAGE','DATE_RANGE'] as const;
@@ -31,8 +31,6 @@ export function FilterPresetModal({ open, onClose, preset }: FilterPresetModalPr
   const [operator, setOperator] = useState<typeof OPERATORS[number]>('Include Exactly');
   const [selected, setSelected] = useState<string[]>([]);
 
-  const { data: searchData } = useQuery(GET_SEARCHES);
-  const affectedCount = searchData?.searches?.length ?? 0;
 
   useEffect(() => {
     if (preset) {
@@ -145,11 +143,11 @@ export function FilterPresetModal({ open, onClose, preset }: FilterPresetModalPr
           <div className="p-4 bg-surface_container rounded-sm ghost-border">
             <p className="overline text-on_tertiary_container mb-2">IMPACT PREVIEW</p>
             <div className="flex items-baseline gap-2 mb-2">
-              <span className="font-display font-bold text-headline-md text-on_surface">{affectedCount}</span>
+              <span className="font-display font-bold text-headline-md text-on_surface">{preset?.searches?.length ?? 0}</span>
               <span className="text-body-sm text-on_surface_variant font-body">Searches</span>
             </div>
             <p className="text-body-sm text-on_surface_variant font-body">
-              This filter will be automatically synchronized with {affectedCount} active monitoring searches.
+              This filter will be automatically synchronized with {preset?.searches?.length ?? 0} active monitoring searches.
             </p>
           </div>
           <div className="p-4 bg-surface_container rounded-sm ghost-border">
