@@ -11,9 +11,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: [
+        // Sprint 001 pages
         'src/pages/SearchLibrary.tsx',
         'src/pages/SearchCreateEdit.tsx',
         'src/pages/FilterPresetLibrary.tsx',
+        // Sprint 002 pages
+        'src/pages/SearchDetail.tsx',
+        'src/pages/LineageExplorer.tsx',
+        'src/pages/CollectionManagement.tsx',
       ],
       thresholds: {
         lines: 60,
