@@ -2,7 +2,7 @@ import { runQuery, toObject } from '../neo4j/driver.js';
 import { randomUUID } from 'crypto';
 import { Driver, Record as Neo4jRecord } from 'neo4j-driver';
 import {
-  ApolloContext, SearchNode, ArticleNode,
+  ApolloContext, SearchNode,
   DeleteResult, SearchLineage, LineageNode,
 } from '../types/index.js';
 
@@ -10,23 +10,13 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function articleMatchesKeywords(article: ArticleNode, keywords: string[]): boolean {
-  const text = (article.headline + ' ' + article.body).toLowerCase();
-  return keywords.some(kw => text.includes(kw.toLowerCase()));
-}
-
 async function buildMatchEdges(driver: Driver, searchId: string, keywords: string[]): Promise<void> {
-  const allArticles = await runQuery(driver, 'MATCH (a:Article) RETURN a');
-  for (const r of allArticles) {
-    const art = toObject(r.get('a')) as ArticleNode;
-    if (articleMatchesKeywords(art, keywords)) {
-      await runQuery(driver, `
-        MATCH (s:Search {id: $sid})
-        MATCH (a:Article {id: $aid})
-        MERGE (s)-[:MATCHES {score: 1.0, matchedAt: datetime()}]->(a)
-      `, { sid: searchId, aid: art.id });
-    }
-  }
+  await runQuery(driver, `
+    MATCH (s:Search {id: $sid})
+    MATCH (a:Article)
+    WHERE any(kw IN $keywords WHERE toLower(a.headline + ' ' + a.body) CONTAINS toLower(kw))
+    MERGE (s)-[:MATCHES {score: 1.0, matchedAt: datetime()}]->(a)
+  `, { sid: searchId, keywords });
 }
 
 // ---------------------------------------------------------------------------
@@ -75,7 +65,8 @@ export const searchQueries = {
   ): Promise<SearchLineage> => {
     const ancestorRecords = await runQuery(driver, `
       MATCH path = (s:Search {id: $id})-[:DERIVED_FROM*0..]->(ancestor:Search)
-      RETURN ancestor, length(path) AS depth
+      RETURN ancestor, length(path) AS depth,
+             NOT EXISTS { (ancestor)-[:DERIVED_FROM]->(:Search) } AS isRoot
     `, { id });
 
     const descendantRecords = await runQuery(driver, `
@@ -95,20 +86,16 @@ export const searchQueries = {
     for (const r of ancestorRecords) {
       const depth = r.get('depth').toNumber();
       const search = toObject(r.get('ancestor')) as SearchNode;
+      const nodeIsRoot = r.get('isRoot') as boolean;
       if (depth > maxDepth) maxDepth = depth;
-      if (depth === ancestorRecords.length - 1) root = search;
-      nodes.push({ search, depth, isRoot: false });
+      if (nodeIsRoot && root === null) root = search;
+      nodes.push({ search, depth, isRoot: nodeIsRoot });
     }
 
     for (const r of descendantRecords) {
       const depth = r.get('depth').toNumber();
       const search = toObject(r.get('descendant')) as SearchNode;
       nodes.push({ search, depth: -depth, isRoot: false });
-    }
-
-    if (root) {
-      const rootNode = nodes.find(n => n.search.id === root!.id);
-      if (rootNode) rootNode.isRoot = true;
     }
 
     return {
@@ -175,17 +162,17 @@ export const searchMutations = {
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id, now: new Date().toISOString() };
 
-    if (input.name)     { setClauses.push('s.name = $name');               params.name     = input.name; }
-    if (input.keywords) { setClauses.push('s.keywords = $keywords');       params.keywords = input.keywords; }
-    if (input.startDate){ setClauses.push('s.startDate = date($startDate)'); params.startDate = input.startDate; }
-    if (input.endDate)  { setClauses.push('s.endDate = date($endDate)');     params.endDate   = input.endDate; }
-    if (input.status)   { setClauses.push('s.status = $status');           params.status   = input.status; }
+    if (input.name      !== undefined) { setClauses.push('s.name = $name');                 params.name      = input.name; }
+    if (input.keywords  !== undefined) { setClauses.push('s.keywords = $keywords');         params.keywords  = input.keywords; }
+    if (input.startDate !== undefined) { setClauses.push('s.startDate = date($startDate)'); params.startDate = input.startDate; }
+    if (input.endDate   !== undefined) { setClauses.push('s.endDate = date($endDate)');     params.endDate   = input.endDate; }
+    if (input.status    !== undefined) { setClauses.push('s.status = $status');             params.status    = input.status; }
     setClauses.push('s.updatedAt = datetime($now)');
 
     const records = await runQuery(driver,
       `MATCH (s:Search {id: $id}) SET ${setClauses.join(', ')} RETURN s`, params);
 
-    if (input.keywords) {
+    if (input.keywords !== undefined) {
       await runQuery(driver, 'MATCH (s:Search {id: $id})-[r:MATCHES]->() DELETE r', { id });
       await buildMatchEdges(driver, id, input.keywords);
     }

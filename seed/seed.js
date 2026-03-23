@@ -78,9 +78,12 @@ async function seed() {
     'CREATE CONSTRAINT source_id IF NOT EXISTS FOR (s:Source) REQUIRE s.id IS UNIQUE',
     'CREATE CONSTRAINT topic_id IF NOT EXISTS FOR (t:Topic) REQUIRE t.id IS UNIQUE',
     'CREATE CONSTRAINT author_id IF NOT EXISTS FOR (a:Author) REQUIRE a.id IS UNIQUE',
+    'CREATE INDEX search_name      IF NOT EXISTS FOR (s:Search)  ON (s.name)',
+    'CREATE INDEX search_status    IF NOT EXISTS FOR (s:Search)  ON (s.status)',
     'CREATE INDEX article_published IF NOT EXISTS FOR (a:Article) ON (a.publishedAt)',
     'CREATE INDEX article_sentiment IF NOT EXISTS FOR (a:Article) ON (a.sentiment)',
-    'CREATE INDEX source_tier IF NOT EXISTS FOR (s:Source) ON (s.tier)',
+    'CREATE INDEX source_name   IF NOT EXISTS FOR (s:Source) ON (s.name)',
+    'CREATE INDEX source_tier   IF NOT EXISTS FOR (s:Source) ON (s.tier)',
     'CREATE INDEX source_region IF NOT EXISTS FOR (s:Source) ON (s.region)',
   ];
   for (const c of constraints) {

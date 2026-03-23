@@ -15,8 +15,8 @@ export function SearchLibrary() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('All Queries');
 
-  const { data: searchData, loading: searchLoading, refetch } = useQuery(GET_SEARCHES);
-  const { data: collectionData } = useQuery(GET_COLLECTIONS);
+  const { data: searchData, loading: searchLoading, error: searchError, refetch } = useQuery(GET_SEARCHES);
+  const { data: collectionData, error: collectionError } = useQuery(GET_COLLECTIONS);
 
   const searches: SearchType[] = searchData?.searches ?? [];
   const collections: Collection[] = collectionData?.collections ?? [];
@@ -53,22 +53,22 @@ export function SearchLibrary() {
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[
-            { label: 'TOTAL SEARCHES',     value: totalSearches,    sub: '+12%', icon: Search,   pulse: false },
-            { label: 'ACTIVE COLLECTIONS', value: activeCollections, sub: `Across ${Math.min(collections.length, 8)} Regions`, icon: Library, pulse: false },
-            { label: 'NEW RESULTS TODAY',  value: newToday * 891,   sub: '',     icon: null,     pulse: true  },
-          ].map(({ label, value, sub, icon: Icon, pulse }) => (
-            <div key={label} className="card p-5 flex items-center justify-between">
-              <div>
+            { label: 'TOTAL SEARCHES',     value: totalSearches,    sub: '+12%', icon: Search,   pulse: false, accent: 'border-primary'   },
+            { label: 'ACTIVE COLLECTIONS', value: activeCollections, sub: `Across ${Math.min(collections.length, 8)} Regions`, icon: Library, pulse: false, accent: 'border-secondary'  },
+            { label: 'NEW RESULTS TODAY',  value: newToday,         sub: '',     icon: null,     pulse: true,  accent: 'border-tertiary'  },
+          ].map(({ label, value, sub, icon: Icon, pulse, accent }) => (
+            <div key={label} className={`bg-surface_container_low p-5 rounded-lg border-l-2 ${accent} flex items-center justify-between relative overflow-hidden`}>
+              <div className="relative z-10">
                 <p className="overline text-on_surface_variant mb-1">{label}</p>
                 <div className="flex items-center gap-2">
                   <span className="font-display font-bold text-headline-sm text-on_surface">
                     {value.toLocaleString()}
                   </span>
-                  {sub && <span className="text-label-sm text-secondary font-body">{sub}</span>}
+                  {sub && <span className="text-label-sm text-on_surface_variant font-body">{sub}</span>}
                   {pulse && <StatusDot status="active" pulse />}
                 </div>
               </div>
-              {Icon && <Icon size={28} className="text-surface_variant" />}
+              {Icon && <Icon size={64} className="absolute right-[-8px] bottom-[-8px] text-on_surface/5 pointer-events-none" />}
             </div>
           ))}
         </div>
@@ -93,7 +93,11 @@ export function SearchLibrary() {
           </div>
         </div>
 
-        {searchLoading ? (
+        {searchError ? (
+          <div role="alert" className="mt-4 p-4 rounded-sm bg-error/10 ghost-border text-error text-body-sm font-body">
+            Failed to load searches: {searchError.message}
+          </div>
+        ) : searchLoading ? (
           <div className="grid grid-cols-2 gap-4 mt-4">
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36" />)}
           </div>
@@ -118,7 +122,11 @@ export function SearchLibrary() {
             <Pin size={10} /> PINNED COLLECTIONS
           </p>
           <div className="space-y-2">
-            {collections.slice(0, 3).map(col => (
+            {collectionError ? (
+              <p role="alert" className="text-label-sm text-error font-body">
+                Unable to load collections.
+              </p>
+            ) : collections.slice(0, 3).map(col => (
               <button
                 key={col.id}
                 onClick={() => navigate(`/collections/${col.id}`)}

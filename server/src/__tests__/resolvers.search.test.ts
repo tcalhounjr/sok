@@ -1,0 +1,557 @@
+/**
+ * Unit tests: search.ts resolvers
+ * Neo4j I/O is fully mocked — no live database required.
+ *
+ * Pattern: vi.hoisted() creates the mock fn before module import, then
+ * vi.mock() factory closes over it so the resolver module sees the same fn.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Hoist mockRunQuery so the vi.mock factory can capture it before imports
+// ---------------------------------------------------------------------------
+const { mockRunQuery } = vi.hoisted(() => ({
+  mockRunQuery: vi.fn(),
+}));
+
+vi.mock('../neo4j/driver.js', () => ({
+  runQuery: mockRunQuery,
+  toObject: (node: { properties: Record<string, unknown> }) => ({ ...node.properties }),
+}));
+
+vi.stubGlobal('crypto', {
+  randomUUID: vi.fn(() => 'test-uuid-1234'),
+});
+
+import {
+  searchQueries,
+  searchMutations,
+  searchFieldResolvers,
+} from '../resolvers/search.js';
+
+// ---------------------------------------------------------------------------
+// Minimal Neo4j shims
+// ---------------------------------------------------------------------------
+
+function makeInt(n: number) {
+  return { toNumber: () => n };
+}
+
+function makeNode(properties: Record<string, unknown>) {
+  return { properties };
+}
+
+function makeRecord(fields: Record<string, unknown>) {
+  return { get: (key: string) => fields[key] };
+}
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+
+const SEARCH_PROPS = {
+  id: 'search-1',
+  name: 'Test Search',
+  keywords: ['semiconductor', 'TSMC'],
+  startDate: '2025-01-01',
+  endDate: '2025-12-31',
+  status: 'active',
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
+};
+
+const CTX = { driver: {} as any };
+
+beforeEach(() => {
+  mockRunQuery.mockReset();
+});
+
+// ===========================================================================
+// searchQueries.search
+// ===========================================================================
+
+describe('searchQueries.search', () => {
+  it('should return the matching search when one exists in the database', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    const result = await searchQueries.search(null, { id: 'search-1' }, CTX);
+
+    expect(result).toMatchObject({ id: 'search-1', name: 'Test Search' });
+    expect(mockRunQuery).toHaveBeenCalledOnce();
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (s:Search {id: $id})');
+    expect(params).toEqual({ id: 'search-1' });
+  });
+
+  it('should return null when no search exists for the given id', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await searchQueries.search(null, { id: 'missing-id' }, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+// ===========================================================================
+// searchQueries.searches
+// ===========================================================================
+
+describe('searchQueries.searches', () => {
+  it('should return all searches when called with no filters', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ s: makeNode(SEARCH_PROPS) }),
+      makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'search-2', name: 'Second Search' }) }),
+    ]);
+
+    const result = await searchQueries.searches(null, {}, CTX);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({ id: 'search-1' });
+  });
+
+  it('should include a WHERE clause filtering by status when status is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await searchQueries.searches(null, { status: 'archived' }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('s.status = $status');
+    expect(params).toMatchObject({ status: 'archived' });
+  });
+
+  it('should use collection-scoped cypher when collectionId is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await searchQueries.searches(null, { collectionId: 'col-1' }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (col:Collection {id: $colId})-[:CONTAINS]');
+    expect(params).toMatchObject({ colId: 'col-1' });
+  });
+
+  it('should include keyword filter clause when keyword is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await searchQueries.searches(null, { keyword: 'TSMC' }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('any(kw IN s.keywords');
+    expect(params).toMatchObject({ keyword: 'TSMC' });
+  });
+
+  it('should return an empty array when no searches match the filters', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await searchQueries.searches(null, { status: 'draft' }, CTX);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should apply both status and keyword conditions when both are provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    await searchQueries.searches(null, { status: 'active', keyword: 'chip' }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('s.status = $status');
+    expect(cypher).toContain('any(kw IN s.keywords');
+    expect(params).toMatchObject({ status: 'active', keyword: 'chip' });
+  });
+});
+
+// ===========================================================================
+// searchQueries.searchLineage
+// ===========================================================================
+
+describe('searchQueries.searchLineage', () => {
+  it('should return root and lineage nodes for a search that has ancestors', async () => {
+    const rootNode = makeNode({ ...SEARCH_PROPS, id: 'root-search' });
+    const selfNode = makeNode({ ...SEARCH_PROPS, id: 'search-1' });
+
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ ancestor: selfNode,  depth: makeInt(0) }),
+      makeRecord({ ancestor: rootNode,  depth: makeInt(1) }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([]); // descendants
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]); // orphan count
+
+    const result = await searchQueries.searchLineage(null, { id: 'search-1' }, CTX);
+
+    expect(result.totalNodes).toBe(2);
+    expect(result.maxDepth).toBe(1);
+    expect(result.orphanCount).toBe(0);
+    expect(result.nodes.some(n => n.search.id === 'root-search')).toBe(true);
+  });
+
+  it('should assign negative depth to descendant nodes', async () => {
+    const selfNode  = makeNode({ ...SEARCH_PROPS, id: 'search-1' });
+    const childNode = makeNode({ ...SEARCH_PROPS, id: 'child-search' });
+
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ ancestor: selfNode, depth: makeInt(0) })]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ descendant: childNode, depth: makeInt(1) })]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'search-1' }, CTX);
+
+    const childLineageNode = result.nodes.find(n => n.search.id === 'child-search');
+    expect(childLineageNode?.depth).toBe(-1);
+  });
+
+  it('should report orphan count accurately when orphaned relationships exist', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(3) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'any-id' }, CTX);
+
+    expect(result.orphanCount).toBe(3);
+  });
+
+  it('should return empty lineage when no ancestors or descendants exist', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'lone-search' }, CTX);
+
+    expect(result.totalNodes).toBe(0);
+    expect(result.root).toBeNull();
+    expect(result.maxDepth).toBe(0);
+  });
+});
+
+// ===========================================================================
+// searchMutations.createSearch
+// ===========================================================================
+
+describe('searchMutations.createSearch', () => {
+  it('should create a search node and return it with the generated id', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'test-uuid-1234' }) })]);
+    mockRunQuery.mockResolvedValueOnce([]); // buildMatchEdges: articles query
+
+    const result = await searchMutations.createSearch(
+      null,
+      { input: { name: 'Test Search', keywords: ['semiconductor'] } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'test-uuid-1234', name: 'Test Search' });
+    expect(mockRunQuery.mock.calls[0][1]).toContain('CREATE (s:Search');
+  });
+
+  it('should use default dates and active status when none are provided in input', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+    mockRunQuery.mockResolvedValueOnce([]); // buildMatchEdges
+
+    await searchMutations.createSearch(
+      null,
+      { input: { name: 'Defaults Test', keywords: ['foo'] } },
+      CTX,
+    );
+
+    const params = mockRunQuery.mock.calls[0][2] as any;
+    expect(params.startDate).toBe('2025-01-01');
+    expect(params.endDate).toBe('2025-12-31');
+    expect(params.status).toBe('active');
+  });
+
+  it('should link the new search to a collection when collectionId is supplied', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+    mockRunQuery.mockResolvedValueOnce([]); // MERGE collection
+    mockRunQuery.mockResolvedValueOnce([]); // buildMatchEdges: articles query
+
+    await searchMutations.createSearch(
+      null,
+      { input: { name: 'In Collection', keywords: ['foo'], collectionId: 'col-1' } },
+      CTX,
+    );
+
+    const collectionCallCypher = mockRunQuery.mock.calls[1][1] as string;
+    expect(collectionCallCypher).toContain('MERGE (col)-[:CONTAINS');
+  });
+
+  it('should create MATCHES edges for articles whose text contains the keyword', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+    // buildMatchEdges: fetch all articles — one matches
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ a: makeNode({ id: 'art-1', headline: 'Semiconductor news', body: 'body text' }) }),
+    ]);
+    // MERGE matching article
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    await searchMutations.createSearch(
+      null,
+      { input: { name: 'Match Test', keywords: ['semiconductor'] } },
+      CTX,
+    );
+
+    const allCyphers = mockRunQuery.mock.calls.map((c: any[]) => c[1] as string);
+    expect(allCyphers.some(c => c.includes('MERGE (s)-[:MATCHES'))).toBe(true);
+  });
+});
+
+// ===========================================================================
+// searchMutations.updateSearch
+// ===========================================================================
+
+describe('searchMutations.updateSearch', () => {
+  it('should update name and return the updated search node', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, name: 'Updated Name' }) })]);
+
+    const result = await searchMutations.updateSearch(
+      null,
+      { id: 'search-1', input: { name: 'Updated Name' } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ name: 'Updated Name' });
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('s.name = $name');
+  });
+
+  it('should always append updatedAt to the SET clause regardless of which fields are updated', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    await searchMutations.updateSearch(
+      null,
+      { id: 'search-1', input: { status: 'archived' } },
+      CTX,
+    );
+
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('s.updatedAt = datetime($now)');
+  });
+
+  it('should delete existing MATCHES edges and rebuild them when keywords are updated', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+    mockRunQuery.mockResolvedValueOnce([]); // DELETE MATCHES
+    mockRunQuery.mockResolvedValueOnce([]); // buildMatchEdges: no articles
+
+    await searchMutations.updateSearch(
+      null,
+      { id: 'search-1', input: { keywords: ['new-keyword'] } },
+      CTX,
+    );
+
+    const deleteCypher = mockRunQuery.mock.calls[1][1] as string;
+    expect(deleteCypher).toContain('DELETE r');
+  });
+
+  it('should not rebuild MATCHES edges when keywords are not part of the update', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    await searchMutations.updateSearch(
+      null,
+      { id: 'search-1', input: { name: 'Just Name Change' } },
+      CTX,
+    );
+
+    expect(mockRunQuery).toHaveBeenCalledOnce();
+  });
+});
+
+// ===========================================================================
+// searchMutations.deleteSearch
+// ===========================================================================
+
+describe('searchMutations.deleteSearch', () => {
+  it('should mark derivative relationships orphaned then detach-delete the search node', async () => {
+    mockRunQuery.mockResolvedValueOnce([]); // SET orphaned
+    mockRunQuery.mockResolvedValueOnce([]); // DETACH DELETE
+
+    const result = await searchMutations.deleteSearch(null, { id: 'search-1' }, CTX);
+
+    expect(result).toEqual({
+      id: 'search-1',
+      success: true,
+      message: expect.stringContaining('orphaned'),
+    });
+    expect(mockRunQuery).toHaveBeenCalledTimes(2);
+    expect(mockRunQuery.mock.calls[0][1]).toContain('SET r.orphaned = true');
+    expect(mockRunQuery.mock.calls[1][1]).toContain('DETACH DELETE s');
+  });
+
+  it('should return success:true even when no derivative relationships exist', async () => {
+    mockRunQuery.mockResolvedValueOnce([]); // no children to orphan
+    mockRunQuery.mockResolvedValueOnce([]); // delete
+
+    const result = await searchMutations.deleteSearch(null, { id: 'leaf-search' }, CTX);
+
+    expect(result.success).toBe(true);
+  });
+});
+
+// ===========================================================================
+// searchMutations.forkSearch
+// ===========================================================================
+
+describe('searchMutations.forkSearch', () => {
+  it('should create a new search inheriting keywords from parents when no override is given', async () => {
+    const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['chip', 'fab'] });
+
+    // 1. Fetch parent keywords
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
+    // 2. Fetch first parent for dates
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
+    // 3. CREATE forked search
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 4. MERGE DERIVED_FROM for parent-1
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 5. MERGE inherited filter presets
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 6. buildMatchEdges: no articles
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 7. Final MATCH to return node
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'test-uuid-1234' }) })]);
+
+    const result = await searchMutations.forkSearch(
+      null,
+      { input: { parentIds: ['parent-1'], name: 'Forked Search' } },
+      CTX,
+    );
+
+    expect(result).toMatchObject({ id: 'test-uuid-1234' });
+    const createCypher = mockRunQuery.mock.calls[2][1] as string;
+    expect(createCypher).toContain("status: 'active'");
+  });
+
+  it('should use override keywords instead of parent keywords when provided', async () => {
+    const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['old-kw'] });
+
+    // override path: skip parent keyword fetch, straight to first parent dates
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
+    mockRunQuery.mockResolvedValueOnce([]);  // CREATE
+    mockRunQuery.mockResolvedValueOnce([]);  // DERIVED_FROM
+    mockRunQuery.mockResolvedValueOnce([]);  // inherit filters
+    mockRunQuery.mockResolvedValueOnce([]);  // buildMatchEdges
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    await searchMutations.forkSearch(
+      null,
+      { input: { parentIds: ['parent-1'], name: 'Forked', keywords: ['override-kw'] } },
+      CTX,
+    );
+
+    const createParams = mockRunQuery.mock.calls[1][2] as any;
+    expect(createParams.keywords).toEqual(['override-kw']);
+  });
+
+  it('should create DERIVED_FROM edges to every parent in parentIds', async () => {
+    const p1 = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['a'] });
+    const p2 = makeNode({ ...SEARCH_PROPS, id: 'parent-2', keywords: ['b'] });
+
+    // fetch parent keywords
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 }), makeRecord({ s: p2 })]);
+    // fetch first parent for dates
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 })]);
+    // CREATE
+    mockRunQuery.mockResolvedValueOnce([]);
+    // DERIVED_FROM parent-1
+    mockRunQuery.mockResolvedValueOnce([]);
+    // DERIVED_FROM parent-2
+    mockRunQuery.mockResolvedValueOnce([]);
+    // inherit filters
+    mockRunQuery.mockResolvedValueOnce([]);
+    // buildMatchEdges
+    mockRunQuery.mockResolvedValueOnce([]);
+    // final MATCH
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
+
+    await searchMutations.forkSearch(
+      null,
+      { input: { parentIds: ['parent-1', 'parent-2'], name: 'Multi-parent Fork' } },
+      CTX,
+    );
+
+    const derivedFromCalls = mockRunQuery.mock.calls
+      .filter((c: any[]) => (c[1] as string).includes('DERIVED_FROM'));
+    expect(derivedFromCalls).toHaveLength(2);
+  });
+});
+
+// ===========================================================================
+// searchFieldResolvers
+// ===========================================================================
+
+describe('searchFieldResolvers.filters', () => {
+  it('should return filters attached to the parent search', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ f: makeNode({ id: 'fp-1', name: 'Tier 1', type: 'SOURCE_TIER', value: '1' }) }),
+    ]);
+
+    const result = await searchFieldResolvers.filters(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'fp-1' });
+  });
+
+  it('should return an empty array when the search has no attached filters', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await searchFieldResolvers.filters(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toEqual([]);
+  });
+});
+
+describe('searchFieldResolvers.collection', () => {
+  it('should return the collection that contains this search', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ col: makeNode({ id: 'col-1', name: 'My Collection', createdAt: '2025-01-01' }) }),
+    ]);
+
+    const result = await searchFieldResolvers.collection(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toMatchObject({ id: 'col-1' });
+  });
+
+  it('should return null when the search belongs to no collection', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await searchFieldResolvers.collection(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('searchFieldResolvers.parents', () => {
+  it('should return all parent searches connected via DERIVED_FROM', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ p: makeNode({ ...SEARCH_PROPS, id: 'parent-1' }) }),
+    ]);
+
+    const result = await searchFieldResolvers.parents(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'parent-1' });
+  });
+});
+
+describe('searchFieldResolvers.derivatives', () => {
+  it('should return searches derived from the parent search', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ d: makeNode({ ...SEARCH_PROPS, id: 'child-1' }) }),
+    ]);
+
+    const result = await searchFieldResolvers.derivatives(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'child-1' });
+  });
+});
+
+describe('searchFieldResolvers.articles', () => {
+  it('should return articles matched by the search ordered by publishedAt desc', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ a: makeNode({
+        id: 'art-1', headline: 'Test', body: 'body',
+        url: 'http://x.com', publishedAt: '2025-06-01', sentiment: 'POSITIVE',
+      }) }),
+    ]);
+
+    const result = await searchFieldResolvers.articles(SEARCH_PROPS as any, null, CTX);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'art-1' });
+  });
+});
