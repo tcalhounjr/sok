@@ -163,6 +163,21 @@ describe('filterPresetMutations.updateFilterPreset', () => {
     expect(cypher).toContain('f.value = $value');
     expect(cypher).not.toContain('f.name');
   });
+
+  it('should include f.type in the SET clause when type is provided', async () => {
+    // SOK-38: close others.ts line 46 — the `if (input.type)` branch
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ f: makeNode(FP_PROPS) })]);
+
+    await filterPresetMutations.updateFilterPreset(
+      null,
+      { id: 'fp-1', input: { type: 'SENTIMENT' } },
+      CTX,
+    );
+
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('f.type = $type');
+    expect(params).toMatchObject({ type: 'SENTIMENT' });
+  });
 });
 
 describe('filterPresetMutations.deleteFilterPreset', () => {
@@ -580,6 +595,19 @@ describe('volumeProjectionQuery.volumeProjection', () => {
 
     const params = mockRunQuery.mock.calls[0][2] as any;
     expect(params.keywords).toEqual(['chip', 'fab', 'TSMC']);
+  });
+
+  it('should default estimatedVolume to zero when the count query returns an empty result set', async () => {
+    // SOK-38: close others.ts line 349 — the `?? 0` nullish-coalescing fallback
+    mockRunQuery.mockResolvedValueOnce([]); // no count record at all
+    mockRunQuery.mockResolvedValueOnce([]); // no top sources
+
+    const result = await volumeProjectionQuery.volumeProjection(
+      null, { keywords: ['ghost-term'] }, CTX,
+    );
+
+    expect(result.estimatedVolume).toBe(0);
+    expect(result.topSources).toEqual([]);
   });
 });
 

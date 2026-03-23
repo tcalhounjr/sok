@@ -239,7 +239,7 @@ describe('searchMutations.createSearch', () => {
     expect(mockRunQuery.mock.calls[0][1]).toContain('CREATE (s:Search');
   });
 
-  it('should use default dates and active status when none are provided in input', async () => {
+  it('should use default dates and ACTIVE status when none are provided in input', async () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
     mockRunQuery.mockResolvedValueOnce([]); // buildMatchEdges
 
@@ -252,7 +252,7 @@ describe('searchMutations.createSearch', () => {
     const params = mockRunQuery.mock.calls[0][2] as any;
     expect(params.startDate).toBe('2025-01-01');
     expect(params.endDate).toBe('2025-12-31');
-    expect(params.status).toBe('active');
+    expect(params.status).toBe('ACTIVE');
   });
 
   it('should link the new search to a collection when collectionId is supplied', async () => {
@@ -355,9 +355,8 @@ describe('searchMutations.updateSearch', () => {
 // ===========================================================================
 
 describe('searchMutations.deleteSearch', () => {
-  it('should mark derivative relationships orphaned then detach-delete the search node', async () => {
-    mockRunQuery.mockResolvedValueOnce([]); // SET orphaned
-    mockRunQuery.mockResolvedValueOnce([]); // DETACH DELETE
+  it('should mark derivative relationships orphaned and delete the search node in a single query', async () => {
+    mockRunQuery.mockResolvedValueOnce([]); // combined SET+DELETE query
 
     const result = await searchMutations.deleteSearch(null, { id: 'search-1' }, CTX);
 
@@ -366,14 +365,12 @@ describe('searchMutations.deleteSearch', () => {
       success: true,
       message: expect.stringContaining('orphaned'),
     });
-    expect(mockRunQuery).toHaveBeenCalledTimes(2);
+    expect(mockRunQuery).toHaveBeenCalledOnce();
     expect(mockRunQuery.mock.calls[0][1]).toContain('SET r.orphaned = true');
-    expect(mockRunQuery.mock.calls[1][1]).toContain('DETACH DELETE s');
   });
 
   it('should return success:true even when no derivative relationships exist', async () => {
-    mockRunQuery.mockResolvedValueOnce([]); // no children to orphan
-    mockRunQuery.mockResolvedValueOnce([]); // delete
+    mockRunQuery.mockResolvedValueOnce([]); // combined query, no children
 
     const result = await searchMutations.deleteSearch(null, { id: 'leaf-search' }, CTX);
 
@@ -389,19 +386,21 @@ describe('searchMutations.forkSearch', () => {
   it('should create a new search inheriting keywords from parents when no override is given', async () => {
     const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['chip', 'fab'] });
 
-    // 1. Fetch parent keywords
+    // 1. parentCheck validation query
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]);
+    // 2. Fetch parent keywords
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    // 2. Fetch first parent for dates
+    // 3. Fetch first parent for dates
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    // 3. CREATE forked search
+    // 4. CREATE forked search
     mockRunQuery.mockResolvedValueOnce([]);
-    // 4. MERGE DERIVED_FROM for parent-1
+    // 5. MERGE DERIVED_FROM for parent-1
     mockRunQuery.mockResolvedValueOnce([]);
-    // 5. MERGE inherited filter presets
+    // 6. MERGE inherited filter presets
     mockRunQuery.mockResolvedValueOnce([]);
-    // 6. buildMatchEdges: no articles
+    // 7. buildMatchEdges: no articles
     mockRunQuery.mockResolvedValueOnce([]);
-    // 7. Final MATCH to return node
+    // 8. Final MATCH to return node
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'test-uuid-1234' }) })]);
 
     const result = await searchMutations.forkSearch(
@@ -411,13 +410,15 @@ describe('searchMutations.forkSearch', () => {
     );
 
     expect(result).toMatchObject({ id: 'test-uuid-1234' });
-    const createCypher = mockRunQuery.mock.calls[2][1] as string;
-    expect(createCypher).toContain("status: 'active'");
+    const createCypher = mockRunQuery.mock.calls[3][1] as string;
+    expect(createCypher).toContain("status: 'ACTIVE'");
   });
 
   it('should use override keywords instead of parent keywords when provided', async () => {
     const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['old-kw'] });
 
+    // 1. parentCheck validation query
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]);
     // override path: skip parent keyword fetch, straight to first parent dates
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
     mockRunQuery.mockResolvedValueOnce([]);  // CREATE
@@ -432,7 +433,7 @@ describe('searchMutations.forkSearch', () => {
       CTX,
     );
 
-    const createParams = mockRunQuery.mock.calls[1][2] as any;
+    const createParams = mockRunQuery.mock.calls[2][2] as any;
     expect(createParams.keywords).toEqual(['override-kw']);
   });
 
@@ -440,21 +441,23 @@ describe('searchMutations.forkSearch', () => {
     const p1 = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['a'] });
     const p2 = makeNode({ ...SEARCH_PROPS, id: 'parent-2', keywords: ['b'] });
 
-    // fetch parent keywords
+    // 1. parentCheck validation query
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(2) })]);
+    // 2. fetch parent keywords
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 }), makeRecord({ s: p2 })]);
-    // fetch first parent for dates
+    // 3. fetch first parent for dates
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 })]);
-    // CREATE
+    // 4. CREATE
     mockRunQuery.mockResolvedValueOnce([]);
-    // DERIVED_FROM parent-1
+    // 5. DERIVED_FROM parent-1
     mockRunQuery.mockResolvedValueOnce([]);
-    // DERIVED_FROM parent-2
+    // 6. DERIVED_FROM parent-2
     mockRunQuery.mockResolvedValueOnce([]);
-    // inherit filters
+    // 7. inherit filters
     mockRunQuery.mockResolvedValueOnce([]);
-    // buildMatchEdges
+    // 8. buildMatchEdges
     mockRunQuery.mockResolvedValueOnce([]);
-    // final MATCH
+    // 9. final MATCH
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
 
     await searchMutations.forkSearch(
@@ -466,6 +469,91 @@ describe('searchMutations.forkSearch', () => {
     const derivedFromCalls = mockRunQuery.mock.calls
       .filter((c: any[]) => (c[1] as string).includes('DERIVED_FROM'));
     expect(derivedFromCalls).toHaveLength(2);
+  });
+
+  it('should link the forked search to a collection when collectionId is provided', async () => {
+    // SOK-38: close search.ts line 277 — collectionId branch inside forkSearch
+    const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['chip'] });
+
+    // 1. parentCheck validation query
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]);
+    // 2. Fetch parent keywords (no override, keywords=[] so fetch from parents)
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
+    // 3. Fetch first parent for dates
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
+    // 4. CREATE forked search
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 5. MERGE DERIVED_FROM
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 6. MERGE inherited filter presets
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 7. MERGE collection CONTAINS — triggered by collectionId
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 8. buildMatchEdges
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 9. Final MATCH to return node
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'test-uuid-1234' }) })]);
+
+    await searchMutations.forkSearch(
+      null,
+      { input: { parentIds: ['parent-1'], name: 'Forked Into Collection', collectionId: 'col-42' } },
+      CTX,
+    );
+
+    const containsCypher = mockRunQuery.mock.calls
+      .find((c: any[]) => (c[1] as string).includes('MERGE (col)-[:CONTAINS'));
+    expect(containsCypher).toBeDefined();
+    expect(containsCypher![2]).toMatchObject({ colId: 'col-42' });
+  });
+
+  it('should throw an error immediately when parentIds is empty', async () => {
+    await expect(
+      searchMutations.forkSearch(null, { input: { parentIds: [], name: 'Bad Fork' } }, CTX),
+    ).rejects.toThrow('parentIds must not be empty');
+
+    // No database queries should have been issued
+    expect(mockRunQuery).not.toHaveBeenCalled();
+  });
+
+  it('should throw an error when parentIds exceeds the maximum allowed length', async () => {
+    const tooManyIds = Array.from({ length: 11 }, (_, i) => `parent-${i}`);
+
+    await expect(
+      searchMutations.forkSearch(null, { input: { parentIds: tooManyIds, name: 'Oversized Fork' } }, CTX),
+    ).rejects.toThrow('parentIds must not exceed 10 entries');
+
+    expect(mockRunQuery).not.toHaveBeenCalled();
+  });
+
+  it('should throw an error when one or more parent IDs do not exist in the database', async () => {
+    // parentCheck returns count 0 — none of the IDs matched
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    await expect(
+      searchMutations.forkSearch(null, { input: { parentIds: ['ghost-id'], name: 'Orphan Fork' } }, CTX),
+    ).rejects.toThrow('One or more parent IDs not found');
+  });
+
+  it('should throw when the first parent record is missing after keyword resolution', async () => {
+    // parentCheck passes, parent keywords fetched, but firstParent lookup returns empty
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]); // parentCheck
+    mockRunQuery.mockResolvedValueOnce([]); // parent keyword fetch (with override this is skipped)
+    // override keywords so we skip the keyword-fetch step and go straight to firstParent
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]); // re-run for override path
+
+    // Use override keywords to skip the keyword query path
+    const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['chip'] });
+    mockRunQuery.mockReset();
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]); // parentCheck
+    mockRunQuery.mockResolvedValueOnce([]); // firstParent returns empty
+
+    await expect(
+      searchMutations.forkSearch(
+        null,
+        { input: { parentIds: ['parent-1'], name: 'Missing Parent Fork', keywords: ['chip'] } },
+        CTX,
+      ),
+    ).rejects.toThrow('Parent search not found: parent-1');
   });
 });
 

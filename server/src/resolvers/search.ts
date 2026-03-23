@@ -58,26 +58,36 @@ export const searchQueries = {
     return records.map(r => toObject(r.get('s')) as SearchNode);
   },
 
+  /**
+   * Resolves the full lineage tree for a given search node.
+   *
+   * Depth convention: ancestor nodes carry a positive depth (distance above
+   * the requested node), while descendant nodes carry a negative depth
+   * (distance below the requested node). The requested node itself appears
+   * at depth 0. This allows callers to distinguish direction without a
+   * separate field.
+   */
   searchLineage: async (
     _parent: unknown,
     { id }: { id: string },
     { driver }: ApolloContext
   ): Promise<SearchLineage> => {
     const ancestorRecords = await runQuery(driver, `
-      MATCH path = (s:Search {id: $id})-[:DERIVED_FROM*0..]->(ancestor:Search)
+      MATCH path = (s:Search {id: $id})-[:DERIVED_FROM*0..15]->(ancestor:Search)
       RETURN ancestor, length(path) AS depth,
              NOT EXISTS { (ancestor)-[:DERIVED_FROM]->(:Search) } AS isRoot
     `, { id });
 
     const descendantRecords = await runQuery(driver, `
-      MATCH path = (s:Search {id: $id})<-[:DERIVED_FROM*1..]-(descendant:Search)
+      MATCH path = (s:Search {id: $id})<-[:DERIVED_FROM*1..15]-(descendant:Search)
       RETURN descendant, length(path) AS depth
     `, { id });
 
     const orphanResult = await runQuery(driver, `
-      MATCH (s:Search)-[r:DERIVED_FROM {orphaned: true}]->()
-      RETURN count(s) AS c
-    `);
+      MATCH (child:Search)-[r:DERIVED_FROM {orphaned: true}]->(ancestor:Search)
+      WHERE ancestor.id = $id OR (ancestor)-[:DERIVED_FROM*]->(:Search {id: $id})
+      RETURN count(child) AS c
+    `, { id });
 
     const nodes: LineageNode[] = [];
     let maxDepth = 0;
@@ -134,7 +144,7 @@ export const searchMutations = {
       id, name: input.name, keywords: input.keywords,
       startDate: input.startDate ?? '2025-01-01',
       endDate:   input.endDate   ?? '2025-12-31',
-      status:    input.status    ?? 'active',
+      status:    input.status    ?? 'ACTIVE',
       now,
     });
 
@@ -188,8 +198,11 @@ export const searchMutations = {
     await runQuery(driver, `
       MATCH (child:Search)-[r:DERIVED_FROM]->(s:Search {id: $id})
       SET r.orphaned = true
+      WITH s
+      OPTIONAL MATCH (s)-[other]-() WHERE NOT (()-[:DERIVED_FROM]->(s))
+      DELETE other
+      DELETE s
     `, { id });
-    await runQuery(driver, 'MATCH (s:Search {id: $id}) DETACH DELETE s', { id });
     return { id, success: true, message: 'Search deleted. Derivative relationships marked orphaned.' };
   },
 
@@ -202,6 +215,22 @@ export const searchMutations = {
     { driver }: ApolloContext
   ): Promise<SearchNode> => {
     const { parentIds, name, keywords: overrideKeywords, collectionId } = input;
+
+    if (parentIds.length === 0) {
+      throw new Error('parentIds must not be empty');
+    }
+
+    const MAX_PARENT_IDS = 10;
+    if (parentIds.length > MAX_PARENT_IDS) {
+      throw new Error(`parentIds must not exceed ${MAX_PARENT_IDS} entries`);
+    }
+
+    const parentCheck = await runQuery(driver,
+      'MATCH (s:Search) WHERE s.id IN $ids RETURN count(s) AS c', { ids: parentIds });
+    if (parentCheck[0].get('c').toNumber() !== parentIds.length) {
+      throw new Error('One or more parent IDs not found');
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
 
@@ -218,13 +247,16 @@ export const searchMutations = {
 
     const firstParent = await runQuery(driver,
       'MATCH (s:Search {id: $id}) RETURN s', { id: parentIds[0] });
+    if (!firstParent.length) {
+      throw new Error(`Parent search not found: ${parentIds[0]}`);
+    }
     const fp = toObject(firstParent[0].get('s')) as SearchNode;
 
     await runQuery(driver, `
       CREATE (s:Search {
         id: $id, name: $name, keywords: $keywords,
         startDate: date($startDate), endDate: date($endDate),
-        status: 'active', createdAt: datetime($now), updatedAt: datetime($now)
+        status: 'ACTIVE', createdAt: datetime($now), updatedAt: datetime($now)
       })
     `, { id, name, keywords, startDate: fp.startDate ?? '2025-01-01', endDate: fp.endDate ?? '2025-12-31', now });
 

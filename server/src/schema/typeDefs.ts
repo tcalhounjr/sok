@@ -15,9 +15,9 @@ export const typeDefs = `#graphql
   }
 
   enum SearchStatus {
-    active
-    archived
-    draft
+    ACTIVE
+    ARCHIVED
+    DRAFT
   }
 
   type Search {
@@ -93,6 +93,11 @@ export const typeDefs = `#graphql
 
   type LineageNode {
     search: Search!
+    """
+    Distance from the requested node. Positive values indicate ancestors
+    (how many hops above); negative values indicate descendants (how many
+    hops below). The requested node itself has depth 0.
+    """
     depth: Int!
     isRoot: Boolean!
   }
@@ -222,6 +227,11 @@ export const typeDefs = `#graphql
     createSearch(input: CreateSearchInput!): Search!
     updateSearch(id: ID!, input: UpdateSearchInput!): Search!
     deleteSearch(id: ID!): DeleteResult!
+    """
+    DD-4: Signature deviates from PRD Section 5 (positional parentId + name args).
+    Uses ForkSearchInput instead to support multi-parent DAG forks (DD-1).
+    A single-parent fork is expressed as parentIds: [id].
+    """
     forkSearch(input: ForkSearchInput!): Search!
     createFilterPreset(input: CreateFilterPresetInput!): FilterPreset!
     updateFilterPreset(id: ID!, input: UpdateFilterPresetInput!): FilterPreset!

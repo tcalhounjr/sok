@@ -19,7 +19,7 @@ export async function runQuery(
 ): Promise<Neo4jRecord[]> {
   const session = driver.session();
   try {
-    const result = await session.run(cypher, params);
+    const result = await session.run(cypher, params, { timeout: 5000 });
     return result.records;
   } finally {
     await session.close();

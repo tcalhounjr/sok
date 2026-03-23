@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
@@ -6,12 +6,9 @@ import { typeDefs } from './schema/typeDefs.js';
 import { resolvers } from './resolvers/index.js';
 import { getDriver } from './neo4j/driver.js';
 import { applySchema } from './neo4j/schema.js';
-import { Driver } from 'neo4j-driver';
+import { ApolloContext } from './types/index.js';
+import { auditLogPlugin } from './plugins/auditLog.js';
 import 'dotenv/config';
-
-export interface ApolloContext {
-  driver: Driver;
-}
 
 const driver = getDriver();
 
@@ -26,26 +23,49 @@ const allowedOrigins = [
   process.env.CORS_ORIGIN,   // Vercel production URL
 ].filter(Boolean) as string[];
 
-const corsOptions: cors.CorsOptions = {
+// Strict CORS for the GraphQL endpoint: only listed origins are allowed.
+// Requests with no origin (e.g. server-side curl) are rejected here.
+const graphqlCorsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, Railway health checks)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      return callback(new Error('CORS: requests without an origin are not permitted on the GraphQL endpoint'));
+    }
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
 };
 
+// Permissive CORS for the health endpoint only: no-origin requests are allowed
+// so that Railway health checks, curl, and similar infrastructure tooling work.
+const healthCorsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+};
+
 const app = express();
 app.use(express.json());
 
-const server = new ApolloServer<ApolloContext>({ typeDefs, resolvers });
+// Health check — infrastructure tooling and Railway probes hit this route.
+app.get('/health', cors(healthCorsOptions), (_req: Request, res: Response) => {
+  res.json({ status: 'ok' });
+});
+
+const server = new ApolloServer<ApolloContext>({
+  typeDefs,
+  resolvers,
+  plugins: [auditLogPlugin],
+});
 await server.start();
 
 // Cast to any to resolve the dual-@types/express version conflict
 // between @apollo/server's bundled types and the express package types.
-app.use('/', cors(corsOptions), expressMiddleware(server, {
-  context: async (): Promise<ApolloContext> => ({ driver }),
+app.use('/', cors(graphqlCorsOptions), expressMiddleware(server, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: async ({ req }: any): Promise<ApolloContext> => ({ driver, req }),
 }) as any);
 
 const port = Number(process.env.PORT) || 4000;

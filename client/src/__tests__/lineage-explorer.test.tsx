@@ -247,3 +247,41 @@ describe('LineageExplorer — branding', () => {
     expect(screen.getByText('NEO4J RELATIONSHIP MODEL')).toBeDefined();
   });
 });
+
+// ===========================================================================
+// SOK-39 carry-in — additional coverage tests
+// ===========================================================================
+
+describe('LineageExplorer — selected node highlights correctly', () => {
+  beforeEach(() => {
+    mockUseQuery.mockReturnValue({ data: { searchLineage: LINEAGE_FIXTURE }, loading: false });
+  });
+
+  it('should mark the clicked node as selected', async () => {
+    renderPage();
+    const nodes = screen.getAllByTestId('lineage-node');
+    await userEvent.click(nodes[0]);
+    expect(nodes[0].getAttribute('data-selected')).toBe('true');
+  });
+
+  it('should deselect the previous node when a different node is clicked', async () => {
+    renderPage();
+    const nodes = screen.getAllByTestId('lineage-node');
+    await userEvent.click(nodes[0]);
+    expect(nodes[0].getAttribute('data-selected')).toBe('true');
+    await userEvent.click(nodes[1]);
+    expect(nodes[0].getAttribute('data-selected')).toBe('false');
+    expect(nodes[1].getAttribute('data-selected')).toBe('true');
+  });
+});
+
+describe('LineageExplorer — lineage stats when data available', () => {
+  beforeEach(() => {
+    mockUseQuery.mockReturnValue({ data: { searchLineage: LINEAGE_FIXTURE }, loading: false });
+  });
+
+  it('should render LineageStats for non-empty lineage', () => {
+    renderPage();
+    expect(screen.getByTestId('lineage-stats')).toBeDefined();
+  });
+});

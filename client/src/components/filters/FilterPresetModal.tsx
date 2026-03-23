@@ -36,9 +36,22 @@ export function FilterPresetModal({ open, onClose, preset }: FilterPresetModalPr
     if (preset) {
       setName(preset.name);
       setType(preset.type);
-      setSelected([preset.value]);
+      // Parse stored value: "operator:val1,val2" or legacy "val1,val2"
+      const colonIdx = preset.value.indexOf(':');
+      if (colonIdx !== -1) {
+        const storedOperator = preset.value.slice(0, colonIdx);
+        const storedValues  = preset.value.slice(colonIdx + 1).split(',').filter(Boolean);
+        const validOp = (OPERATORS as readonly string[]).includes(storedOperator)
+          ? (storedOperator as typeof OPERATORS[number])
+          : 'Include Exactly';
+        setOperator(validOp);
+        setSelected(storedValues);
+      } else {
+        setOperator('Include Exactly');
+        setSelected(preset.value.split(',').filter(Boolean));
+      }
     } else {
-      setName(''); setType('SOURCE_TIER'); setSelected([]);
+      setName(''); setType('SOURCE_TIER'); setOperator('Include Exactly'); setSelected([]);
     }
   }, [preset, open]);
 
@@ -57,7 +70,7 @@ export function FilterPresetModal({ open, onClose, preset }: FilterPresetModalPr
   const loading = creating || updating || deleting;
 
   function handleSave() {
-    const value = selected.join(',');
+    const value = `${operator}:${selected.join(',')}`;
     if (isEdit && preset) {
       updatePreset({ variables: { id: preset.id, input: { name, type, value } } });
     } else {

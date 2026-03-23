@@ -354,3 +354,73 @@ describe('SearchDetail — with articles', () => {
     expect(screen.getByText('2')).toBeDefined();
   });
 });
+
+// ===========================================================================
+// SOK-39 carry-in — additional coverage tests
+// ===========================================================================
+
+describe('SearchDetail — collection breadcrumb falls back to LIBRARY', () => {
+  const searchWithParentNoCollection = {
+    ...SEARCH_FIXTURE,
+    parents: [{ id: 'parent-1', name: 'Root Search' }],
+    collection: null,
+  };
+
+  beforeEach(() => {
+    mockUseQuery.mockReturnValue({
+      data: { search: searchWithParentNoCollection },
+      loading: false,
+    });
+  });
+
+  it('should render LIBRARY as the breadcrumb overline when collection is null', () => {
+    renderPage();
+    expect(screen.getByText('LIBRARY')).toBeDefined();
+  });
+});
+
+describe('SearchDetail — multiple parents breadcrumb', () => {
+  const searchWithMultipleParents = {
+    ...SEARCH_FIXTURE,
+    parents: [
+      { id: 'p1', name: 'Alpha Feed' },
+      { id: 'p2', name: 'Beta Feed' },
+    ],
+    collection: null,
+  };
+
+  beforeEach(() => {
+    mockUseQuery.mockReturnValue({
+      data: { search: searchWithMultipleParents },
+      loading: false,
+    });
+  });
+
+  it('should join multiple parent names with + in the breadcrumb', () => {
+    renderPage();
+    expect(screen.getByText('ALPHA FEED + BETA FEED')).toBeDefined();
+  });
+});
+
+describe('SearchDetail — true matches percentage', () => {
+  const searchWithArticles = {
+    ...SEARCH_FIXTURE,
+    articles: [
+      {
+        id: 'art-1', headline: 'Test', publishedAt: '2025-06-01T00:00:00Z',
+        sentiment: 'NEUTRAL',
+        source: { id: 'src-1', name: 'Reuters', tier: 1, region: 'GLOBAL' },
+        topics: [],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    mockUseQuery.mockReturnValue({ data: { search: searchWithArticles }, loading: false });
+  });
+
+  it('should show the 82% true-matches figure when articles exist', () => {
+    renderPage();
+    expect(screen.getByText('82%')).toBeDefined();
+  });
+});
