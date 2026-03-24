@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { CheckCircle, AlertTriangle, ChevronDown, XCircle } from 'lucide-react';
+import { AlertTriangle, XCircle } from 'lucide-react';
 import { CREATE_SEARCH, UPDATE_SEARCH } from '../apollo/mutations';
 import { GET_SEARCH, GET_SEARCHES } from '../apollo/queries';
 import { useVolumeProjection } from '../hooks/useVolumeProjection';
@@ -131,6 +131,7 @@ export function SearchCreateEdit() {
                     className="flex-1 px-3 py-2 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none" />
                 </div>
               </div>
+              {/* TODO: Refinement Level — deferred to future release. Schema field + resolver not yet implemented.
               <div>
                 <label className="overline text-on_surface_variant block mb-1.5">Refinement Level</label>
                 <div className="flex items-center gap-2 px-3 py-2.5 bg-surface_container_high rounded-sm ghost-border">
@@ -139,6 +140,7 @@ export function SearchCreateEdit() {
                   <ChevronDown size={13} className="ml-auto text-on_surface_variant" />
                 </div>
               </div>
+              */}
             </div>
           </div>
 
