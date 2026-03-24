@@ -367,4 +367,4 @@ Both test suites use Vitest with coverage.
 
 ### Authentication Note
 
-All GraphQL mutations require a valid HS256 JWT Bearer token. The token must be signed with the value of `AUTH_SECRET` and must include an `exp` claim. Queries are intentionally open during development so the GraphQL playground remains usable without a token. To mint a token for local development, sign a payload of `{ sub: "dev-user", exp: <unix timestamp> }` with the same secret set in `AUTH_SECRET`.
+All GraphQL mutations require a valid JWT Bearer token signed with `AUTH_SECRET`. Queries are open so the GraphQL playground remains usable without a token during local development.
