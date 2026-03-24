@@ -50,6 +50,7 @@ vi.mock('../components/ui/StatusDot', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
+  Calendar:      () => <span />,
   CheckCircle:   () => <span />,
   AlertTriangle: () => <span />,
   ChevronDown:   () => <span />,
