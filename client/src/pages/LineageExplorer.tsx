@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { GET_SEARCH_LINEAGE } from '../apollo/queries';
 import { Skeleton } from '../components/ui/Skeleton';
+import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import { LineageNodeCard } from '../components/lineage/LineageNodeCard';
 import { NodeInspector } from '../components/lineage/NodeInspector';
 import { LineageStats } from '../components/lineage/LineageStats';
@@ -10,7 +11,7 @@ import type { LineageNode } from '../types';
 
 export function LineageExplorer() {
   const { id } = useParams<{ id: string }>();
-  const { data, loading } = useQuery(GET_SEARCH_LINEAGE, { variables: { id } });
+  const { data, loading, error, refetch } = useQuery(GET_SEARCH_LINEAGE, { variables: { id } });
   const [selected, setSelected] = useState<LineageNode | null>(null);
 
   const lineage = data?.searchLineage;
@@ -38,7 +39,12 @@ export function LineageExplorer() {
           </p>
         </div>
 
-        {loading ? (
+        {error ? (
+          <QueryErrorPanel
+            message="Unable to load lineage data. Check your connection and try again."
+            onRetry={refetch}
+          />
+        ) : loading ? (
           <div className="space-y-6">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
           </div>
