@@ -11,11 +11,12 @@ import React from 'react';
 // Hoist mocks before any module imports
 // ---------------------------------------------------------------------------
 
-const { mockUseQuery, mockUseMutation, mockUseLazyQuery, mockNavigate } = vi.hoisted(() => ({
+const { mockUseQuery, mockUseMutation, mockUseLazyQuery, mockNavigate, mockUseParams } = vi.hoisted(() => ({
   mockUseQuery:     vi.fn(),
   mockUseMutation:  vi.fn(),
   mockUseLazyQuery: vi.fn(),
   mockNavigate:     vi.fn(),
+  mockUseParams:    vi.fn(),
 }));
 
 vi.mock('@apollo/client', () => ({
@@ -27,7 +28,7 @@ vi.mock('@apollo/client', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
-  useParams:   () => ({}),
+  useParams:   () => mockUseParams(),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
@@ -91,6 +92,8 @@ beforeEach(() => {
   mockUseMutation.mockReset();
   mockUseLazyQuery.mockReset();
   mockNavigate.mockReset();
+  mockUseParams.mockReset();
+  mockUseParams.mockReturnValue({});
 });
 
 // ===========================================================================
@@ -252,7 +255,7 @@ describe('SearchCreateEdit — mutation on submit', () => {
           input: expect.objectContaining({
             name: 'My Search',
             keywords: ['chip'],
-            status: 'active',
+            status: 'ACTIVE',
           }),
         }),
       }),
@@ -271,7 +274,7 @@ describe('SearchCreateEdit — mutation on submit', () => {
     expect(createMutationFn).toHaveBeenCalledWith(
       expect.objectContaining({
         variables: expect.objectContaining({
-          input: expect.objectContaining({ status: 'draft' }),
+          input: expect.objectContaining({ status: 'DRAFT' }),
         }),
       }),
     );
@@ -375,20 +378,9 @@ describe('SearchCreateEdit — topic taxonomy', () => {
 
 describe('SearchCreateEdit — edit mode heading', () => {
   it('should render Edit Intelligence Stream heading when an id param is present', () => {
-    // Override useParams to return an id so isEdit = true
-    vi.mocked(mockUseLazyQuery).mockReturnValue([vi.fn(), { loading: false }]);
-
-    // Re-mock react-router-dom useParams to return an id
-    // We need to re-import with the mock already in place; do it inline
-    const { mockUseQuery: mqUQ } = vi.hoisted(() => ({ mockUseQuery: vi.fn() }));
-    // The file-level mock already covers this; set useParams to return { id: 'search-1' }
-    // by reaching into the module mock boundary:
+    // Set useParams to return an id so isEdit = true in the component
+    mockUseParams.mockReturnValue({ id: 'search-1' });
     mockUseQuery.mockReturnValue({ loading: false, data: undefined });
-
-    // Create a module-level spy override for this one test
-    // useParams is already mocked to return {} by default; the isEdit flag is derived from it
-    // The existing mock returns {} so isEdit = false — this test targets the heading string
-    // directly by setting up the mock to simulate an id param via useQuery returning edit data
     mockUseLazyQuery.mockReturnValue([vi.fn(), { loading: false }]);
 
     let mutationCallCount = 0;
@@ -398,12 +390,7 @@ describe('SearchCreateEdit — edit mode heading', () => {
       return [vi.fn(), { loading: false }];
     });
 
-    // The component derives isEdit from useParams — override useParams for this test
-    // via the module mock that was set up with vi.mock('react-router-dom', ...)
-    // Since the mock factory references mockNavigate (file-scope), we exercise
-    // the "no id" path here and backlog the "with id" path to avoid re-hoisting
-    // Note: this test verifies the fallback heading text is present in create mode
     renderPage();
-    expect(screen.getByText('Configure Intelligence Stream')).toBeDefined();
+    expect(screen.getByText('Edit Intelligence Stream')).toBeDefined();
   });
 });

@@ -60,7 +60,7 @@ const SEARCH_PROPS = {
   updatedAt: '2025-01-01T00:00:00Z',
 };
 
-const CTX = { driver: {} as any };
+const CTX = { driver: {} as any, callerId: 'test-user' };
 
 beforeEach(() => {
   mockRunQuery.mockReset();

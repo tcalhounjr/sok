@@ -38,13 +38,6 @@ function resolveIp(requestContext: GraphQLRequestContextWillSendResponse<ApolloC
   const req = requestContext.contextValue?.req;
   if (!req) return 'unknown';
 
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    // x-forwarded-for may be a comma-separated list; the first entry is the client.
-    const first = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0];
-    return first.trim();
-  }
-
   return req.socket?.remoteAddress ?? 'unknown';
 }
 

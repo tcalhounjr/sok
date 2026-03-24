@@ -299,3 +299,162 @@ describe('ForkModal — loading state', () => {
     expect(forkBtn.disabled).toBe(true);
   });
 });
+
+// ===========================================================================
+// SOK-30: Multi-parent selection
+// ===========================================================================
+
+const SEARCHES_FIXTURE = [
+  { ...SEARCH_FIXTURE, id: 'search-1', name: 'Semiconductor Shift' },
+  { ...SEARCH_FIXTURE, id: 'search-2', name: 'AI Hardware Demand', keywords: ['AI', 'GPU'] },
+  { ...SEARCH_FIXTURE, id: 'search-3', name: 'Export Controls Watch', keywords: ['export', 'ban'] },
+];
+
+describe('ForkModal — multi-parent selection: Add another parent', () => {
+  beforeEach(() => {
+    // GET_SEARCHES is fetched when the parent picker is opened (skip=false)
+    mockUseQuery.mockReturnValue({ data: { searches: SEARCHES_FIXTURE }, loading: false });
+  });
+
+  it('should render the Add another parent button when the picker is not open', () => {
+    renderOpen();
+    expect(screen.getByText('Add another parent')).toBeDefined();
+  });
+
+  it('should reveal the parent picker search input when Add another parent is clicked', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    expect(screen.getByPlaceholderText('Search intelligence feeds...')).toBeDefined();
+  });
+
+  it('should list eligible searches in the parent picker excluding the primary parent', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    // search-1 (primary parent) must not appear; search-2 and search-3 must appear
+    expect(screen.getByText('AI Hardware Demand')).toBeDefined();
+    expect(screen.getByText('Export Controls Watch')).toBeDefined();
+    // 'Semiconductor Shift' appears in two places: the primary parent display panel
+    // and the isolation notice text — but NOT as a picker list button.
+    // The component filters it via eligibleSearches (s.id !== search.id).
+    // Confirm there is no button with that text in the picker list.
+    const allSemiButtons = screen.queryAllByRole('button', { name: /Semiconductor Shift/ });
+    // The only button with that text would be if it leaked into the picker list —
+    // the primary parent panel renders it as a <p>, not a <button>.
+    expect(allSemiButtons.length).toBe(0);
+  });
+
+  it('should add the selected search as an additional parent when clicked in the picker', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    await userEvent.click(screen.getByText('AI Hardware Demand'));
+    // After selection the picker closes and the additional parent card appears
+    expect(screen.getByText('AI Hardware Demand')).toBeDefined();
+    // The picker input should no longer be visible
+    expect(screen.queryByPlaceholderText('Search intelligence feeds...')).toBeNull();
+  });
+
+  it('should close the picker and show Add another parent button again after a parent is selected', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    await userEvent.click(screen.getByText('AI Hardware Demand'));
+    expect(screen.getByText('Add another parent')).toBeDefined();
+  });
+
+  it('should include the additional parent id in the parentIds array when the fork mutation fires', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    await userEvent.click(screen.getByText('AI Hardware Demand'));
+    await userEvent.click(screen.getByText('Fork and Create'));
+    expect(mockForkFn).toHaveBeenCalledWith({
+      variables: {
+        input: {
+          parentIds: ['search-1', 'search-2'],
+          name: 'Semiconductor Shift (Derivative)',
+          collectionId: 'col-1',
+        },
+      },
+    });
+  });
+
+  it('should build a parentIds array with all selected additional parents when multiple are added', async () => {
+    renderOpen();
+    // Add first additional parent
+    await userEvent.click(screen.getByText('Add another parent'));
+    await userEvent.click(screen.getByText('AI Hardware Demand'));
+    // Add second additional parent
+    await userEvent.click(screen.getByText('Add another parent'));
+    await userEvent.click(screen.getByText('Export Controls Watch'));
+    // Fire the mutation and assert both additional ids are present
+    await userEvent.click(screen.getByText('Fork and Create'));
+    expect(mockForkFn).toHaveBeenCalledWith({
+      variables: {
+        input: {
+          parentIds: ['search-1', 'search-2', 'search-3'],
+          name: 'Semiconductor Shift (Derivative)',
+          collectionId: 'col-1',
+        },
+      },
+    });
+  });
+
+  it('should remove an additional parent when its remove button is clicked', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    await userEvent.click(screen.getByText('AI Hardware Demand'));
+    // Remove via aria-label button
+    const removeBtn = screen.getByRole('button', { name: 'Remove AI Hardware Demand as parent' });
+    await userEvent.click(removeBtn);
+    // After removal the parent card should disappear and parentIds reverts to primary only
+    await userEvent.click(screen.getByText('Fork and Create'));
+    expect(mockForkFn).toHaveBeenCalledWith({
+      variables: {
+        input: {
+          parentIds: ['search-1'],
+          name: 'Semiconductor Shift (Derivative)',
+          collectionId: 'col-1',
+        },
+      },
+    });
+  });
+
+  it('should filter the picker list when the user types a search query', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    const input = screen.getByPlaceholderText('Search intelligence feeds...');
+    await userEvent.type(input, 'AI');
+    expect(screen.getByText('AI Hardware Demand')).toBeDefined();
+    // 'Export Controls Watch' does not contain 'AI' — must not be visible
+    expect(screen.queryByText('Export Controls Watch')).toBeNull();
+  });
+
+  it('should show No matching searches found when the query matches nothing', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    const input = screen.getByPlaceholderText('Search intelligence feeds...');
+    await userEvent.type(input, 'xyzzy_no_match');
+    expect(screen.getByText('No matching searches found.')).toBeDefined();
+  });
+
+  it('should close the picker without adding a parent when Cancel is clicked inside the picker', async () => {
+    renderOpen();
+    await userEvent.click(screen.getByText('Add another parent'));
+    // There are now two Cancel buttons: the picker Cancel (rendered first in
+    // DOM order, inside the picker footer div) and the modal Cancel (rendered
+    // last in the actions section at the bottom of the modal body).
+    // The picker Cancel is cancelBtns[0].
+    const cancelBtns = screen.getAllByText('Cancel');
+    await userEvent.click(cancelBtns[0]);
+    // Picker should be gone; mutation parentIds should only contain primary
+    expect(screen.queryByPlaceholderText('Search intelligence feeds...')).toBeNull();
+    await userEvent.click(screen.getByText('Fork and Create'));
+    expect(mockForkFn).toHaveBeenCalledWith({
+      variables: {
+        input: {
+          parentIds: ['search-1'],
+          name: 'Semiconductor Shift (Derivative)',
+          collectionId: 'col-1',
+        },
+      },
+    });
+  });
+});

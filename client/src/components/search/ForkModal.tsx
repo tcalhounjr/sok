@@ -132,6 +132,13 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
             </div>
           )}
 
+          {/* Parent cap notice */}
+          {additionalParentIds.length >= 9 && !showParentPicker && (
+            <p className="mt-2 text-label-sm text-on_surface_variant font-body">
+              Maximum 10 parents reached.
+            </p>
+          )}
+
           {/* Parent picker */}
           {showParentPicker ? (
             <div className="mt-2 bg-surface_container_high rounded-sm ghost-border overflow-hidden">
@@ -168,7 +175,7 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
                 </button>
               </div>
             </div>
-          ) : (
+          ) : additionalParentIds.length < 9 ? (
             <button
               onClick={() => setShowParentPicker(true)}
               className="mt-2 flex items-center gap-1.5 text-label-sm text-on_surface_variant hover:text-primary transition-colors font-body"
@@ -176,7 +183,7 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
               <Plus size={11} />
               Add another parent
             </button>
-          )}
+          ) : null}
         </div>
 
         {/* Derivative name */}

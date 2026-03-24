@@ -15,14 +15,16 @@ export function LineageExplorer() {
 
   const lineage = data?.searchLineage;
 
-  // Group nodes by absolute depth level for rendering rows
+  // Group nodes by signed depth. Ancestors have positive depth (rendered above
+  // the focal node), the focal node is at depth 0, and descendants have
+  // negative depth (rendered below). Sort descending so ancestors appear first.
   const byDepth = new Map<number, LineageNode[]>();
   lineage?.nodes?.forEach((n: LineageNode) => {
-    const d = Math.abs(n.depth);
+    const d = n.depth;
     if (!byDepth.has(d)) byDepth.set(d, []);
     byDepth.get(d)!.push(n);
   });
-  const depths = [...byDepth.keys()].sort((a, b) => a - b);
+  const depths = [...byDepth.keys()].sort((a, b) => b - a);
 
   return (
     <div className="flex h-full">

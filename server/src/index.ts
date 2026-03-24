@@ -8,6 +8,7 @@ import { getDriver } from './neo4j/driver.js';
 import { applySchema } from './neo4j/schema.js';
 import { ApolloContext } from './types/index.js';
 import { auditLogPlugin } from './plugins/auditLog.js';
+import { resolveCallerId } from './auth/middleware.js';
 import 'dotenv/config';
 
 const driver = getDriver();
@@ -47,17 +48,30 @@ const healthCorsOptions: cors.CorsOptions = {
 };
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 // Health check — infrastructure tooling and Railway probes hit this route.
 app.get('/health', cors(healthCorsOptions), (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
+// Never expose stack traces in API responses — suppress regardless of NODE_ENV.
+// Internal errors are logged server-side by the audit plugin; callers only see
+// the message, which must not contain sensitive implementation details.
+const required = ['AUTH_SECRET', 'NEO4J_URI', 'NEO4J_USER', 'NEO4J_PASSWORD'];
+for (const key of required) {
+  if (!process.env[key]) {
+    console.error(`FATAL: required environment variable ${key} is not set`);
+    process.exit(1);
+  }
+}
+
 const server = new ApolloServer<ApolloContext>({
   typeDefs,
   resolvers,
   plugins: [auditLogPlugin],
+  includeStacktraceInErrorResponses: false,
+  introspection: process.env.NODE_ENV !== 'production',
 });
 await server.start();
 
@@ -65,7 +79,11 @@ await server.start();
 // between @apollo/server's bundled types and the express package types.
 app.use('/', cors(graphqlCorsOptions), expressMiddleware(server, {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  context: async ({ req }: any): Promise<ApolloContext> => ({ driver, req }),
+  context: async ({ req }: any): Promise<ApolloContext> => ({
+    driver,
+    req,
+    callerId: await resolveCallerId(req),
+  }),
 }) as any);
 
 const port = Number(process.env.PORT) || 4000;

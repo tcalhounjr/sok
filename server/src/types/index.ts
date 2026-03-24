@@ -5,6 +5,11 @@ export interface ApolloContext {
   driver: Driver;
   /** Express request object — used by audit-log plugin to read originating IP. */
   req?: Request;
+  /**
+   * Caller identity extracted from a validated JWT Bearer token.
+   * Null when the request carries no token (unauthenticated).
+   */
+  callerId: string | null;
 }
 
 export interface SearchNode {

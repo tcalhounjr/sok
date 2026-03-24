@@ -75,7 +75,7 @@ export function SearchCreateEdit() {
     setTouched(true);
     setMutationError(null);
     if (!name.trim() || keywords.length === 0) return;
-    const input = { name, keywords, startDate, endDate, status: deploy ? 'active' : 'draft' };
+    const input = { name, keywords, startDate, endDate, status: deploy ? 'ACTIVE' : 'DRAFT' };
     if (isEdit) {
       updateSearch({ variables: { id, input } });
     } else {

@@ -34,7 +34,6 @@ const NARRATIVE_SHIFTS = [
 export function NarrativeTrends() {
   const { id } = useParams<{ id: string }>();
   const [interval, setIntervalVal] = useState('L7D');
-  const [view, setView] = useState<'current' | 'parent'>('current');
 
   const { data, loading } = useQuery(GET_NARRATIVE_TRENDS, {
     variables: { searchId: id, interval },
@@ -91,19 +90,6 @@ export function NarrativeTrends() {
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="flex rounded-sm ghost-border overflow-hidden">
-              {(['current', 'parent'] as const).map(v => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1.5 text-label-sm font-body capitalize transition-colors ${
-                    view === v ? 'bg-surface_container_high text-on_surface' : 'text-on_surface_variant hover:text-on_surface'
-                  }`}
-                >
-                  {v === 'current' ? 'Current Search' : 'Parent Narrative'}
-                </button>
-              ))}
-            </div>
             <div className="flex rounded-sm ghost-border overflow-hidden">
               {INTERVALS.map(opt => (
                 <button
