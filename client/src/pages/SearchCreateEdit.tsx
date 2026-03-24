@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { CheckCircle, AlertTriangle, Calendar, ChevronDown, XCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, ChevronDown, XCircle } from 'lucide-react';
 import { CREATE_SEARCH, UPDATE_SEARCH } from '../apollo/mutations';
 import { GET_SEARCH, GET_SEARCHES } from '../apollo/queries';
 import { useVolumeProjection } from '../hooks/useVolumeProjection';
@@ -124,17 +124,11 @@ export function SearchCreateEdit() {
               <div>
                 <label className="overline text-on_surface_variant block mb-1.5">Temporal Scope</label>
                 <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Calendar size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on_surface pointer-events-none" />
-                    <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none" />
-                  </div>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none" />
                   <span className="text-on_surface_variant">—</span>
-                  <div className="relative flex-1">
-                    <Calendar size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-on_surface pointer-events-none" />
-                    <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none" />
-                  </div>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none" />
                 </div>
               </div>
               <div>
