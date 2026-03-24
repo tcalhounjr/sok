@@ -42,9 +42,9 @@ export const filterPresetMutations = {
   ) => {
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id };
-    if (input.name)  { setClauses.push('f.name = $name');   params.name  = input.name; }
-    if (input.type)  { setClauses.push('f.type = $type');   params.type  = input.type; }
-    if (input.value) { setClauses.push('f.value = $value'); params.value = input.value; }
+    if (input.name  !== undefined) { setClauses.push('f.name = $name');   params.name  = input.name; }
+    if (input.type  !== undefined) { setClauses.push('f.type = $type');   params.type  = input.type; }
+    if (input.value !== undefined) { setClauses.push('f.value = $value'); params.value = input.value; }
     const records = await runQuery(driver,
       `MATCH (f:FilterPreset {id: $id}) SET ${setClauses.join(', ')} RETURN f`, params);
     return toObject(records[0].get('f')) as FilterPresetNode;
@@ -127,8 +127,8 @@ export const collectionMutations = {
   ) => {
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id };
-    if (input.name)        { setClauses.push('c.name = $name');               params.name        = input.name; }
-    if (input.description) { setClauses.push('c.description = $description'); params.description = input.description; }
+    if (input.name        !== undefined) { setClauses.push('c.name = $name');               params.name        = input.name; }
+    if (input.description !== undefined) { setClauses.push('c.description = $description'); params.description = input.description; }
     const records = await runQuery(driver,
       `MATCH (c:Collection {id: $id}) SET ${setClauses.join(', ')} RETURN c`, params);
     return toObject(records[0].get('c')) as CollectionNode;
