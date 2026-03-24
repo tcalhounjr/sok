@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink, ApolloLink } from '@apollo/client';
 
 // VITE_API_URL — Railway production URL (set in Vercel/Railway env vars).
 // Falls back to VITE_GRAPHQL_URL for local dev, then the default dev server.
@@ -7,12 +7,22 @@ const graphqlUri =
   import.meta.env.VITE_GRAPHQL_URL ??
   'http://localhost:4000';
 
+const authLink = new ApolloLink((operation, forward) => {
+  const token = import.meta.env.VITE_AUTH_TOKEN;
+  if (token) {
+    operation.setContext(({ headers = {} }) => ({
+      headers: { ...headers, Authorization: `Bearer ${token}` },
+    }));
+  }
+  return forward(operation);
+});
+
 const httpLink = new HttpLink({
   uri: graphqlUri,
 });
 
 export const apolloClient = new ApolloClient({
-  link: httpLink,
+  link: ApolloLink.from([authLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Search:       { keyFields: ['id'] },
