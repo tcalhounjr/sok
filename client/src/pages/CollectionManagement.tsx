@@ -136,10 +136,12 @@ export function CollectionManagement() {
           {/* Footer */}
           <div className="px-6 py-4 border-t border-surface_bright/10 flex items-center justify-between">
             <CollaboratorAvatars initials={['A', 'B', 'C']} overflow={3} />
-            <div className="flex items-center gap-3">
-              <button className="btn-secondary text-xs">Discard Changes</button>
-              <button className="btn-primary text-xs">Save Collection State</button>
-            </div>
+            <button
+              onClick={() => setActiveColId(null)}
+              className="btn-secondary text-xs"
+            >
+              Done
+            </button>
           </div>
         </div>
       ) : (

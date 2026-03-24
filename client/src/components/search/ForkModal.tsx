@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@apollo/client';
-import { GitBranch, Info, Lock } from 'lucide-react';
+import { useMutation, useQuery } from '@apollo/client';
+import { GitBranch, Info, Lock, Plus, X } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { KeywordTag } from '../ui/KeywordTag';
 import { Badge } from '../ui/Badge';
@@ -18,6 +18,43 @@ interface ForkModalProps {
 export function ForkModal({ open, onClose, search }: ForkModalProps) {
   const navigate = useNavigate();
   const [name, setName] = useState(`${search.name} (Derivative)`);
+  const [additionalParentIds, setAdditionalParentIds] = useState<string[]>([]);
+  const [parentPickerQuery, setParentPickerQuery] = useState('');
+  const [showParentPicker, setShowParentPicker] = useState(false);
+
+  useEffect(() => {
+    if (open) setName(`${search.name} (Derivative)`);
+  }, [open, search.id, search.name]);
+
+  // Reset additional parents when modal closes
+  useEffect(() => {
+    if (!open) {
+      setAdditionalParentIds([]);
+      setParentPickerQuery('');
+      setShowParentPicker(false);
+    }
+  }, [open]);
+
+  const { data: searchesData } = useQuery(GET_SEARCHES, {
+    skip: !showParentPicker,
+  });
+
+  const allSearches: Search[] = searchesData?.searches ?? [];
+
+  // Searches eligible as additional parents: not the primary parent, not already added
+  const eligibleSearches = allSearches.filter(
+    s => s.id !== search.id && !additionalParentIds.includes(s.id)
+  );
+
+  const filteredEligible = parentPickerQuery.trim()
+    ? eligibleSearches.filter(s =>
+        s.name.toLowerCase().includes(parentPickerQuery.toLowerCase())
+      )
+    : eligibleSearches;
+
+  const additionalParents = allSearches.filter(s =>
+    additionalParentIds.includes(s.id)
+  );
 
   const [forkSearch, { loading }] = useMutation(FORK_SEARCH, {
     refetchQueries: [{ query: GET_SEARCHES }],
@@ -31,12 +68,22 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
     forkSearch({
       variables: {
         input: {
-          parentIds: [search.id],
+          parentIds: [search.id, ...additionalParentIds],
           name,
           collectionId: search.collection?.id,
         },
       },
     });
+  }
+
+  function addParent(id: string) {
+    setAdditionalParentIds(prev => [...prev, id]);
+    setParentPickerQuery('');
+    setShowParentPicker(false);
+  }
+
+  function removeParent(id: string) {
+    setAdditionalParentIds(prev => prev.filter(p => p !== id));
   }
 
   return (
@@ -48,15 +95,88 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
       subtitle="Create a new curated collection based on existing intelligence parameters."
     >
       <div className="px-6 pb-6 space-y-5">
-        {/* Parent feed */}
-        <div className="p-4 bg-surface_container rounded-sm ghost-border flex items-center gap-3">
-          <div className="w-8 h-8 rounded-sm bg-surface_container_high flex items-center justify-center">
-            <GitBranch size={14} className="text-on_surface_variant" />
+        {/* Primary parent feed */}
+        <div>
+          <p className="overline text-on_surface_variant mb-2">PARENT INTELLIGENCE FEED</p>
+          <div className="p-4 bg-surface_container rounded-sm ghost-border flex items-center gap-3">
+            <div className="w-8 h-8 rounded-sm bg-surface_container_high flex items-center justify-center">
+              <GitBranch size={14} className="text-on_surface_variant" />
+            </div>
+            <div>
+              <p className="font-display font-semibold text-on_surface text-sm">{search.name}</p>
+              <p className="text-label-sm text-on_surface_variant font-body">Primary parent</p>
+            </div>
           </div>
-          <div>
-            <p className="overline text-on_surface_variant mb-0.5">PARENT INTELLIGENCE FEED</p>
-            <p className="font-display font-semibold text-on_surface text-sm">{search.name}</p>
-          </div>
+
+          {/* Additional parents */}
+          {additionalParents.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {additionalParents.map(p => (
+                <div
+                  key={p.id}
+                  className="p-3 bg-surface_container rounded-sm ghost-border flex items-center gap-3"
+                >
+                  <div className="w-6 h-6 rounded-sm bg-surface_container_high flex items-center justify-center flex-shrink-0">
+                    <GitBranch size={11} className="text-on_surface_variant" />
+                  </div>
+                  <p className="font-display font-semibold text-on_surface text-sm flex-1">{p.name}</p>
+                  <button
+                    onClick={() => removeParent(p.id)}
+                    className="text-on_surface_variant hover:text-error transition-colors"
+                    aria-label={`Remove ${p.name} as parent`}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Parent picker */}
+          {showParentPicker ? (
+            <div className="mt-2 bg-surface_container_high rounded-sm ghost-border overflow-hidden">
+              <input
+                autoFocus
+                value={parentPickerQuery}
+                onChange={e => setParentPickerQuery(e.target.value)}
+                placeholder="Search intelligence feeds..."
+                className="w-full px-3 py-2.5 bg-transparent text-body-sm text-on_surface placeholder:text-on_surface_variant focus:outline-none border-b border-surface_bright/10"
+              />
+              <div className="max-h-40 overflow-y-auto">
+                {filteredEligible.length === 0 ? (
+                  <p className="px-3 py-3 text-body-sm text-on_surface_variant font-body italic">
+                    No matching searches found.
+                  </p>
+                ) : (
+                  filteredEligible.slice(0, 20).map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => addParent(s.id)}
+                      className="w-full text-left px-3 py-2 text-body-sm text-on_surface hover:bg-surface_container transition-colors"
+                    >
+                      {s.name}
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="px-3 py-2 border-t border-surface_bright/10">
+                <button
+                  onClick={() => { setShowParentPicker(false); setParentPickerQuery(''); }}
+                  className="text-label-sm text-on_surface_variant hover:text-on_surface transition-colors font-body"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowParentPicker(true)}
+              className="mt-2 flex items-center gap-1.5 text-label-sm text-on_surface_variant hover:text-primary transition-colors font-body"
+            >
+              <Plus size={11} />
+              Add another parent
+            </button>
+          )}
         </div>
 
         {/* Derivative name */}

@@ -1,7 +1,10 @@
 import { Driver } from 'neo4j-driver';
+import { Request } from 'express';
 
 export interface ApolloContext {
   driver: Driver;
+  /** Express request object — used by audit-log plugin to read originating IP. */
+  req?: Request;
 }
 
 export interface SearchNode {
@@ -10,7 +13,7 @@ export interface SearchNode {
   keywords: string[];
   startDate?: string;
   endDate?: string;
-  status: 'active' | 'archived' | 'draft';
+  status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT';
   createdAt: string;
   updatedAt: string;
 }
