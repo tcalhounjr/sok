@@ -2,7 +2,7 @@ import { Search, Bell, Settings } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const tabs: Record<string, string[]> = {
-  '/':        ['Analytics', 'Narratives', 'Sources', 'Collections'],
+  '/':        ['Analytics', 'Narratives', 'Sources'],
   '/presets': ['Curation Tools'],
   '/trends':  ['Search', 'Collections', 'Filters', 'Trends'],
 };
