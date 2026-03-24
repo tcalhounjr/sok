@@ -8,7 +8,8 @@ import { cn } from '../../lib/utils';
 const navItems = [
   { to: '/',           icon: LayoutDashboard, label: 'Dashboard'      },
   { to: '/search/new', icon: Search,           label: 'Search Builder' },
-  { to: '/presets',    icon: Sliders,          label: 'Preset Library' },
+  { to: '/presets',     icon: Sliders,  label: 'Preset Library' },
+  { to: '/collections', icon: Archive, label: 'Collections'    },
 ];
 
 const bottomItems = [

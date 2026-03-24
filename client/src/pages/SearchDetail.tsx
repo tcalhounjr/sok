@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { GitBranch, Clock, Eye, TrendingUp, X } from 'lucide-react';
+import { GitBranch, Clock, Edit, Eye, TrendingUp, X } from 'lucide-react';
 import { GET_SEARCH } from '../apollo/queries';
 import { REMOVE_FILTER_FROM_SEARCH } from '../apollo/mutations';
 import { KeywordTag } from '../components/ui/KeywordTag';
@@ -75,6 +75,14 @@ export function SearchDetail() {
               >
                 <Clock size={12} /> Version History
               </button>
+              {id && (
+                <button
+                  onClick={() => navigate(`/search/${id}/edit`)}
+                  className="btn-secondary flex items-center gap-2 text-xs"
+                >
+                  <Edit size={12} /> Edit
+                </button>
+              )}
               <button
                 onClick={() => setForkOpen(true)}
                 className="btn-primary flex items-center gap-2 text-xs"
