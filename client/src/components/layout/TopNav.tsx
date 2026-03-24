@@ -28,7 +28,7 @@ export function TopNav() {
                 className={`px-3 py-1 text-body-md transition-colors ${
                   i === currentTabs.length - 1
                     ? 'text-on_surface border-b-2 border-primary'
-                    : 'text-on_surface_variant hover:text-on_surface'
+                    : 'text-on_surface_variant cursor-default'
                 }`}
               >
                 {tab}
