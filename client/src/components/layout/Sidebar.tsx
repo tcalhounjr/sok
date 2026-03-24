@@ -1,15 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Search, Sliders,
-  Archive, HelpCircle, GitBranch,
+  Archive, HelpCircle,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const navItems = [
-  { to: '/',          icon: LayoutDashboard, label: 'Dashboard'      },
-  { to: '/search',    icon: Search,           label: 'Search Builder' },
-  { to: '/presets',   icon: Sliders,          label: 'Preset Library' },
-  { to: '/lineage',   icon: GitBranch,        label: 'Lineage'        },
+  { to: '/',           icon: LayoutDashboard, label: 'Dashboard'      },
+  { to: '/search/new', icon: Search,           label: 'Search Builder' },
+  { to: '/presets',    icon: Sliders,          label: 'Preset Library' },
 ];
 
 const bottomItems = [

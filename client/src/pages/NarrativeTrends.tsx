@@ -5,6 +5,7 @@ import { GET_NARRATIVE_TRENDS } from '../apollo/queries';
 import { StatusDot } from '../components/ui/StatusDot';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
+import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import { VolumeChart } from '../components/trends/VolumeChart';
 import { SentimentBreakdown } from '../components/trends/SentimentBreakdown';
 import { TopicCloud } from '../components/trends/TopicCloud';
@@ -34,9 +35,8 @@ const NARRATIVE_SHIFTS = [
 export function NarrativeTrends() {
   const { id } = useParams<{ id: string }>();
   const [interval, setIntervalVal] = useState('L7D');
-  const [view, setView] = useState<'current' | 'parent'>('current');
 
-  const { data, loading } = useQuery(GET_NARRATIVE_TRENDS, {
+  const { data, loading, error, refetch } = useQuery(GET_NARRATIVE_TRENDS, {
     variables: { searchId: id, interval },
     skip: !id,
   });
@@ -92,19 +92,6 @@ export function NarrativeTrends() {
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="flex rounded-sm ghost-border overflow-hidden">
-              {(['current', 'parent'] as const).map(v => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1.5 text-label-sm font-body capitalize transition-colors ${
-                    view === v ? 'bg-surface_container_high text-on_surface' : 'text-on_surface_variant hover:text-on_surface'
-                  }`}
-                >
-                  {v === 'current' ? 'Current Search' : 'Parent Narrative'}
-                </button>
-              ))}
-            </div>
-            <div className="flex rounded-sm ghost-border overflow-hidden">
               {INTERVALS.map(opt => (
                 <button
                   key={opt}
@@ -120,35 +107,44 @@ export function NarrativeTrends() {
           </div>
         </div>
 
-        {/* Charts row */}
-        <div className="grid grid-cols-3 gap-5 mb-5">
-          <div className="col-span-2">
-            <VolumeChart data={trends?.volumeOverTime ?? []} loading={loading} />
-          </div>
-          <SentimentBreakdown data={trends?.sentimentBreakdown ?? null} loading={loading} />
-        </div>
-
-        {/* Topics + Sources row */}
-        <div className="grid grid-cols-2 gap-5 mb-5">
-          <TopicCloud topics={trends?.topTopics ?? []} loading={loading} />
-          <SourceRankings
-            sources={trends?.topSources ?? []}
-            totalArticles={trends?.totalArticles ?? 0}
-            loading={loading}
+        {error ? (
+          <QueryErrorPanel
+            message="Unable to load trend data. Check your connection and try again."
+            onRetry={refetch}
           />
-        </div>
+        ) : (
+          <>
+            {/* Charts row */}
+            <div className="grid grid-cols-3 gap-5 mb-5">
+              <div className="col-span-2">
+                <VolumeChart data={trends?.volumeOverTime ?? []} loading={loading} />
+              </div>
+              <SentimentBreakdown data={trends?.sentimentBreakdown ?? null} loading={loading} />
+            </div>
 
-        {/* Recent Narrative Shifts */}
-        <div>
-          <h3 className="font-display font-semibold text-on_surface text-sm mb-4">
-            Recent Narrative Shifts
-          </h3>
-          <div className="grid grid-cols-3 gap-4">
-            {NARRATIVE_SHIFTS.map((shift, i) => (
-              <NarrativeShiftCard key={i} {...shift} />
-            ))}
-          </div>
-        </div>
+            {/* Topics + Sources row */}
+            <div className="grid grid-cols-2 gap-5 mb-5">
+              <TopicCloud topics={trends?.topTopics ?? []} loading={loading} />
+              <SourceRankings
+                sources={trends?.topSources ?? []}
+                totalArticles={trends?.totalArticles ?? 0}
+                loading={loading}
+              />
+            </div>
+
+            {/* Recent Narrative Shifts */}
+            <div>
+              <h3 className="font-display font-semibold text-on_surface text-sm mb-4">
+                Recent Narrative Shifts
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                {NARRATIVE_SHIFTS.map((shift, i) => (
+                  <NarrativeShiftCard key={i} {...shift} />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import {
   ApolloContext, SearchNode,
   DeleteResult, SearchLineage, LineageNode,
 } from '../types/index.js';
+import { requireAuth } from '../auth/middleware.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,7 +53,7 @@ export const searchQueries = {
       params.keyword = keyword;
     }
     if (conditions.length) cypher += ` WHERE ${conditions.join(' AND ')}`;
-    cypher += ' RETURN s ORDER BY s.updatedAt DESC';
+    cypher += ' RETURN s ORDER BY s.updatedAt DESC LIMIT 100';
 
     const records = await runQuery(driver, cypher, params);
     return records.map(r => toObject(r.get('s')) as SearchNode);
@@ -129,8 +130,9 @@ export const searchMutations = {
       name: string; keywords: string[]; startDate?: string;
       endDate?: string; status?: string; collectionId?: string;
     }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<SearchNode> => {
+    requireAuth(callerId);
     const id = randomUUID();
     const now = new Date().toISOString();
 
@@ -142,8 +144,8 @@ export const searchMutations = {
       }) RETURN s
     `, {
       id, name: input.name, keywords: input.keywords,
-      startDate: input.startDate ?? '2025-01-01',
-      endDate:   input.endDate   ?? '2025-12-31',
+      startDate: input.startDate ?? `${new Date().getFullYear()}-01-01`,
+      endDate:   input.endDate   ?? `${new Date().getFullYear()}-12-31`,
       status:    input.status    ?? 'ACTIVE',
       now,
     });
@@ -167,8 +169,9 @@ export const searchMutations = {
       name?: string; keywords?: string[]; startDate?: string;
       endDate?: string; status?: string;
     }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<SearchNode> => {
+    requireAuth(callerId);
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id, now: new Date().toISOString() };
 
@@ -193,15 +196,15 @@ export const searchMutations = {
   deleteSearch: async (
     _parent: unknown,
     { id }: { id: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<DeleteResult> => {
+    requireAuth(callerId);
     await runQuery(driver, `
-      MATCH (child:Search)-[r:DERIVED_FROM]->(s:Search {id: $id})
+      MATCH (s:Search {id: $id})
+      OPTIONAL MATCH (child:Search)-[r:DERIVED_FROM]->(s)
       SET r.orphaned = true
       WITH s
-      OPTIONAL MATCH (s)-[other]-() WHERE NOT (()-[:DERIVED_FROM]->(s))
-      DELETE other
-      DELETE s
+      DETACH DELETE s
     `, { id });
     return { id, success: true, message: 'Search deleted. Derivative relationships marked orphaned.' };
   },
@@ -212,8 +215,9 @@ export const searchMutations = {
       parentIds: string[]; name: string;
       keywords?: string[]; collectionId?: string;
     }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<SearchNode> => {
+    requireAuth(callerId);
     const { parentIds, name, keywords: overrideKeywords, collectionId } = input;
 
     if (parentIds.length === 0) {
@@ -234,10 +238,14 @@ export const searchMutations = {
     const id = randomUUID();
     const now = new Date().toISOString();
 
+    const currentYear = new Date().getFullYear();
+    const defaultStartDate = `${currentYear}-01-01`;
+    const defaultEndDate   = `${currentYear}-12-31`;
+
     let keywords = overrideKeywords ?? [];
+    const parentRecords = await runQuery(driver,
+      'MATCH (s:Search) WHERE s.id IN $ids RETURN s', { ids: parentIds });
     if (keywords.length === 0) {
-      const parentRecords = await runQuery(driver,
-        'MATCH (s:Search) WHERE s.id IN $ids RETURN s', { ids: parentIds });
       const allKws = new Set<string>();
       for (const r of parentRecords) {
         for (const kw of (r.get('s').properties.keywords as string[])) allKws.add(kw);
@@ -245,12 +253,7 @@ export const searchMutations = {
       keywords = [...allKws];
     }
 
-    const firstParent = await runQuery(driver,
-      'MATCH (s:Search {id: $id}) RETURN s', { id: parentIds[0] });
-    if (!firstParent.length) {
-      throw new Error(`Parent search not found: ${parentIds[0]}`);
-    }
-    const fp = toObject(firstParent[0].get('s')) as SearchNode;
+    const fp = toObject(parentRecords[0].get('s')) as SearchNode;
 
     await runQuery(driver, `
       CREATE (s:Search {
@@ -258,7 +261,7 @@ export const searchMutations = {
         startDate: date($startDate), endDate: date($endDate),
         status: 'ACTIVE', createdAt: datetime($now), updatedAt: datetime($now)
       })
-    `, { id, name, keywords, startDate: fp.startDate ?? '2025-01-01', endDate: fp.endDate ?? '2025-12-31', now });
+    `, { id, name, keywords, startDate: fp.startDate ?? defaultStartDate, endDate: fp.endDate ?? defaultEndDate, now });
 
     for (const parentId of parentIds) {
       await runQuery(driver, `
@@ -323,7 +326,7 @@ export const searchFieldResolvers = {
 
   articles: async (parent: SearchNode, _args: unknown, { driver }: ApolloContext) => {
     const records = await runQuery(driver,
-      'MATCH (s:Search {id: $id})-[:MATCHES]->(a:Article) RETURN a ORDER BY a.publishedAt DESC',
+      'MATCH (s:Search {id: $id})-[:MATCHES]->(a:Article) RETURN a ORDER BY a.publishedAt DESC LIMIT 200',
       { id: parent.id });
     return records.map(r => toObject(r.get('a')));
   },

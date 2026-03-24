@@ -6,6 +6,7 @@ import type { FilterPreset } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Badge } from '../components/ui/Badge';
 import { FilterPresetModal } from '../components/filters/FilterPresetModal';
+import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 
 const TYPE_ICONS: Record<string, string> = {
   SOURCE_TIER: '▤',
@@ -24,7 +25,7 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export function FilterPresetLibrary() {
-  const { data, loading, error } = useQuery(GET_FILTER_PRESETS);
+  const { data, loading, error, refetch } = useQuery(GET_FILTER_PRESETS);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FilterPreset | null>(null);
 
@@ -56,9 +57,10 @@ export function FilterPresetLibrary() {
         </div>
 
         {error ? (
-          <div role="alert" className="p-4 rounded-sm bg-error/10 ghost-border text-error text-body-sm font-body">
-            Failed to load filter presets: {error.message}
-          </div>
+          <QueryErrorPanel
+            message="Unable to load filter presets. Check your connection and try again."
+            onRetry={refetch}
+          />
         ) : loading ? (
           <div className="grid grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40" />)}

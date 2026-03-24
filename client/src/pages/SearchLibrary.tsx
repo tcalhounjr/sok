@@ -6,6 +6,7 @@ import { GET_SEARCHES, GET_COLLECTIONS } from '../apollo/queries';
 import { SearchCard } from '../components/search/SearchCard';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatusDot } from '../components/ui/StatusDot';
+import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import type { Search as SearchType, Collection } from '../types';
 
 const TABS = ['All Queries', 'High Priority', 'Archived'] as const;
@@ -94,8 +95,11 @@ export function SearchLibrary() {
         </div>
 
         {searchError ? (
-          <div role="alert" className="mt-4 p-4 rounded-sm bg-error/10 ghost-border text-error text-body-sm font-body">
-            Failed to load searches: {searchError.message}
+          <div className="mt-4">
+            <QueryErrorPanel
+              message="Unable to load your searches. Check your connection and try again."
+              onRetry={refetch}
+            />
           </div>
         ) : searchLoading ? (
           <div className="grid grid-cols-2 gap-4 mt-4">

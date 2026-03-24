@@ -5,6 +5,7 @@ import {
   ArticleNode, TopicNode, SourceNode,
   DeleteResult, NarrativeTrends, VolumeProjection,
 } from '../types/index.js';
+import { requireAuth } from '../auth/middleware.js';
 
 // ---------------------------------------------------------------------------
 // Filter Preset
@@ -26,8 +27,9 @@ export const filterPresetMutations = {
   createFilterPreset: async (
     _: unknown,
     { input }: { input: { name: string; type: string; value: string }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     const id = randomUUID();
     const records = await runQuery(driver,
       'CREATE (f:FilterPreset {id: $id, name: $name, type: $type, value: $value}) RETURN f',
@@ -38,21 +40,26 @@ export const filterPresetMutations = {
   updateFilterPreset: async (
     _: unknown,
     { id, input }: { id: string; input: { name?: string; type?: string; value?: string }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id };
     if (input.name  !== undefined) { setClauses.push('f.name = $name');   params.name  = input.name; }
     if (input.type  !== undefined) { setClauses.push('f.type = $type');   params.type  = input.type; }
     if (input.value !== undefined) { setClauses.push('f.value = $value'); params.value = input.value; }
+    if (setClauses.length === 0) {
+      throw new Error('At least one field must be provided to update');
+    }
     const records = await runQuery(driver,
       `MATCH (f:FilterPreset {id: $id}) SET ${setClauses.join(', ')} RETURN f`, params);
     return toObject(records[0].get('f')) as FilterPresetNode;
   },
 
   deleteFilterPreset: async (
-    _: unknown, { id }: { id: string }, { driver }: ApolloContext
+    _: unknown, { id }: { id: string }, { driver, callerId }: ApolloContext
   ): Promise<DeleteResult> => {
+    requireAuth(callerId);
     await runQuery(driver, 'MATCH (f:FilterPreset {id: $id}) DETACH DELETE f', { id });
     return { id, success: true, message: 'FilterPreset deleted and removed from all searches.' };
   },
@@ -60,8 +67,9 @@ export const filterPresetMutations = {
   applyFilterToSearch: async (
     _: unknown,
     { filterId, searchId }: { filterId: string; searchId: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     await runQuery(driver, `
       MATCH (s:Search {id: $searchId}) MATCH (f:FilterPreset {id: $filterId})
       MERGE (s)-[:HAS_FILTER {appliedAt: datetime()}]->(f)
@@ -73,8 +81,9 @@ export const filterPresetMutations = {
   removeFilterFromSearch: async (
     _: unknown,
     { filterId, searchId }: { filterId: string; searchId: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     await runQuery(driver, `
       MATCH (s:Search {id: $searchId})-[r:HAS_FILTER]->(f:FilterPreset {id: $filterId}) DELETE r
     `, { searchId, filterId });
@@ -111,8 +120,9 @@ export const collectionMutations = {
   createCollection: async (
     _: unknown,
     { input }: { input: { name: string; description?: string }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     const id = randomUUID();
     const records = await runQuery(driver,
       'CREATE (c:Collection {id: $id, name: $name, description: $desc, createdAt: datetime()}) RETURN c',
@@ -123,20 +133,25 @@ export const collectionMutations = {
   updateCollection: async (
     _: unknown,
     { id, input }: { id: string; input: { name?: string; description?: string }},
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id };
     if (input.name        !== undefined) { setClauses.push('c.name = $name');               params.name        = input.name; }
     if (input.description !== undefined) { setClauses.push('c.description = $description'); params.description = input.description; }
+    if (setClauses.length === 0) {
+      throw new Error('At least one field must be provided to update');
+    }
     const records = await runQuery(driver,
       `MATCH (c:Collection {id: $id}) SET ${setClauses.join(', ')} RETURN c`, params);
     return toObject(records[0].get('c')) as CollectionNode;
   },
 
   deleteCollection: async (
-    _: unknown, { id }: { id: string }, { driver }: ApolloContext
+    _: unknown, { id }: { id: string }, { driver, callerId }: ApolloContext
   ): Promise<DeleteResult> => {
+    requireAuth(callerId);
     await runQuery(driver, 'MATCH (c:Collection {id: $id}) DETACH DELETE c', { id });
     return { id, success: true, message: 'Collection deleted. Member searches preserved.' };
   },
@@ -144,8 +159,9 @@ export const collectionMutations = {
   addSearchToCollection: async (
     _: unknown,
     { searchId, collectionId }: { searchId: string; collectionId: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     await runQuery(driver, `
       MATCH (col:Collection {id: $colId}) MATCH (s:Search {id: $srchId})
       MERGE (col)-[:CONTAINS {addedAt: datetime()}]->(s)
@@ -157,8 +173,9 @@ export const collectionMutations = {
   removeSearchFromCollection: async (
     _: unknown,
     { searchId, collectionId }: { searchId: string; collectionId: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     await runQuery(driver, `
       MATCH (col:Collection {id: $colId})-[r:CONTAINS]->(s:Search {id: $srchId}) DELETE r
     `, { colId: collectionId, srchId: searchId });
@@ -263,10 +280,18 @@ export const narrativeTrendsQuery = {
   narrativeTrends: async (
     _: unknown,
     { searchId, interval = 'day' }: { searchId: string; interval?: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<NarrativeTrends> => {
+    requireAuth(callerId);
+    const now = new Date();
+    const startDate = interval === 'L7D'  ? new Date(now.getTime() - 7  * 86400000).toISOString().split('T')[0]
+                    : interval === 'L30D' ? new Date(now.getTime() - 30 * 86400000).toISOString().split('T')[0]
+                    : interval === 'L90D' ? new Date(now.getTime() - 90 * 86400000).toISOString().split('T')[0]
+                    : null;
+
     const volRecords = await runQuery(driver, `
       MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)
+      WHERE ($startDate IS NULL OR a.publishedAt >= $startDate)
       WITH a, date(a.publishedAt) AS day
       RETURN day,
              count(a) AS volume,
@@ -274,7 +299,7 @@ export const narrativeTrendsQuery = {
              sum(CASE WHEN a.sentiment = 'NEUTRAL'  THEN 1 ELSE 0 END) AS neutral,
              sum(CASE WHEN a.sentiment = 'NEGATIVE' THEN 1 ELSE 0 END) AS negative
       ORDER BY day ASC
-    `, { searchId });
+    `, { searchId, startDate });
 
     const volumeOverTime = volRecords.map(r => ({
       date:     r.get('day').toString(),
@@ -336,8 +361,9 @@ export const volumeProjectionQuery = {
   volumeProjection: async (
     _: unknown,
     { keywords }: { keywords: string[] },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<VolumeProjection> => {
+    requireAuth(callerId);
     const countRecords = await runQuery(driver, `
       MATCH (a:Article)
       WHERE any(kw IN $keywords

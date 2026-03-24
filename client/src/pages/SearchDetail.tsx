@@ -8,6 +8,7 @@ import { KeywordTag } from '../components/ui/KeywordTag';
 import { StatusDot } from '../components/ui/StatusDot';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
+import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import { ForkModal } from '../components/search/ForkModal';
 import { timeAgo } from '../lib/utils';
 
@@ -16,12 +17,21 @@ export function SearchDetail() {
   const navigate = useNavigate();
   const [forkOpen, setForkOpen] = useState(false);
 
-  const { data, loading } = useQuery(GET_SEARCH, { variables: { id } });
+  const { data, loading, error, refetch } = useQuery(GET_SEARCH, { variables: { id } });
   const search = data?.search;
 
   const [removeFilter] = useMutation(REMOVE_FILTER_FROM_SEARCH, {
     refetchQueries: [{ query: GET_SEARCH, variables: { id } }],
   });
+
+  if (error) return (
+    <div className="p-8 h-full">
+      <QueryErrorPanel
+        message="Unable to load search details. Check your connection and try again."
+        onRetry={refetch}
+      />
+    </div>
+  );
 
   if (loading) return (
     <div className="p-8 space-y-4">

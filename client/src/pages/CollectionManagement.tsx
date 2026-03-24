@@ -9,6 +9,7 @@ import {
 } from '../apollo/mutations';
 import { Badge } from '../components/ui/Badge';
 import { StatusDot } from '../components/ui/StatusDot';
+import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import { CollectionSidebar } from '../components/collections/CollectionSidebar';
 import { CollectionSearchCard } from '../components/collections/CollectionSearchCard';
 import { CollaboratorAvatars } from '../components/collections/CollaboratorAvatars';
@@ -21,8 +22,8 @@ export function CollectionManagement() {
   const [newColName, setNewColName] = useState('');
   const [showNewCol, setShowNewCol] = useState(false);
 
-  const { data: colData, loading: colLoading } = useQuery(GET_COLLECTIONS);
-  const { data: searchData } = useQuery(GET_SEARCHES);
+  const { data: colData, loading: colLoading, error: colError, refetch: refetchCollections } = useQuery(GET_COLLECTIONS);
+  const { data: searchData, error: searchError, refetch: refetchSearches } = useQuery(GET_SEARCHES);
 
   const collections: Collection[] = colData?.collections ?? [];
   const allSearches: Search[] = searchData?.searches ?? [];
@@ -82,7 +83,17 @@ export function CollectionManagement() {
         onNewColCancel={() => { setShowNewCol(false); setNewColName(''); }}
       />
 
-      {activeCollection ? (
+      {colError ? (
+        <QueryErrorPanel
+          message="Unable to load collections. Check your connection and try again."
+          onRetry={refetchCollections}
+        />
+      ) : searchError ? (
+        <QueryErrorPanel
+          message="Unable to load searches. Check your connection and try again."
+          onRetry={refetchSearches}
+        />
+      ) : activeCollection ? (
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
           <div className="px-6 pt-5 pb-4 border-b border-surface_bright/10 flex items-start justify-between">

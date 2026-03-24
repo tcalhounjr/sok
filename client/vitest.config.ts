@@ -19,6 +19,9 @@ export default defineConfig({
         'src/pages/SearchDetail.tsx',
         'src/pages/LineageExplorer.tsx',
         'src/pages/CollectionManagement.tsx',
+        // Sprint 003 pages and components
+        'src/pages/NarrativeTrends.tsx',
+        'src/components/search/ForkModal.tsx',
       ],
       thresholds: {
         lines: 60,
