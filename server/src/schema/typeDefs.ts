@@ -33,7 +33,7 @@ export const typeDefs = `#graphql
     collection: Collection
     parents: [Search!]!
     derivatives: [Search!]!
-    articles: [Article!]!
+    articles(offset: Int): [Article!]!
   }
 
   type FilterPreset {
@@ -50,6 +50,8 @@ export const typeDefs = `#graphql
     description: String
     createdAt: String!
     searches: [Search!]!
+    totalArticles: Int!
+    sentimentSummary: SentimentBreakdown
   }
 
   type Article {
@@ -139,6 +141,14 @@ export const typeDefs = `#graphql
     count: Int!
   }
 
+  type NarrativeShift {
+    type: String!
+    title: String!
+    body: String!
+    timestamp: String!
+    live: Boolean!
+  }
+
   type NarrativeTrends {
     searchId: ID!
     searchName: String!
@@ -148,6 +158,7 @@ export const typeDefs = `#graphql
     topSources: [TopSourceCount!]!
     topTopics: [TopTopicCount!]!
     totalArticles: Int!
+    narrativeShifts: [NarrativeShift!]!
   }
 
   type VolumeProjection {
@@ -216,6 +227,8 @@ export const typeDefs = `#graphql
     filterPresets: [FilterPreset!]!
     collection(id: ID!): Collection
     collections: [Collection!]!
+    source(id: ID!): Source
+    sourceArticles(sourceId: ID!, searchId: ID, limit: Int, offset: Int): [Article!]!
     article(id: ID!): Article
     articles(searchId: ID, sentiment: Sentiment, sourceId: ID): [Article!]!
     topics: [Topic!]!

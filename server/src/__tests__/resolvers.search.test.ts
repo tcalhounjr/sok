@@ -630,6 +630,9 @@ describe('searchFieldResolvers.derivatives', () => {
 
 describe('searchFieldResolvers.articles', () => {
   it('should return articles matched by the search ordered by publishedAt desc', async () => {
+    // First call: fetch HAS_FILTER presets (none for this search)
+    mockRunQuery.mockResolvedValueOnce([]);
+    // Second call: the articles query
     mockRunQuery.mockResolvedValueOnce([
       makeRecord({ a: makeNode({
         id: 'art-1', headline: 'Test', body: 'body',
@@ -637,9 +640,41 @@ describe('searchFieldResolvers.articles', () => {
       }) }),
     ]);
 
-    const result = await searchFieldResolvers.articles(SEARCH_PROPS as any, null, CTX);
+    const result = await searchFieldResolvers.articles(SEARCH_PROPS as any, {}, CTX);
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({ id: 'art-1' });
+  });
+
+  it('should apply filter WHERE clauses when HAS_FILTER presets are present', async () => {
+    // First call: fetch HAS_FILTER presets — one SENTIMENT filter
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ f: makeNode({ id: 'fp-1', type: 'SENTIMENT', value: 'POSITIVE' }) }),
+    ]);
+    // Second call: the filtered articles query
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ a: makeNode({
+        id: 'art-2', headline: 'Positive story', body: 'body',
+        url: 'http://x.com', publishedAt: '2025-06-02', sentiment: 'POSITIVE',
+      }) }),
+    ]);
+
+    const result = await searchFieldResolvers.articles(SEARCH_PROPS as any, {}, CTX);
+
+    expect(result).toHaveLength(1);
+    const [, cypher, params] = mockRunQuery.mock.calls[1];
+    expect(cypher).toContain('a.sentiment = $sentimentValue');
+    expect(params).toMatchObject({ sentimentValue: 'POSITIVE' });
+  });
+
+  it('should apply SKIP $offset when offset is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([]); // no filters
+    mockRunQuery.mockResolvedValueOnce([]); // articles query
+
+    await searchFieldResolvers.articles(SEARCH_PROPS as any, { offset: 20 }, CTX);
+
+    const [, cypher, params] = mockRunQuery.mock.calls[1];
+    expect(cypher).toContain('SKIP $offset');
+    expect(params).toMatchObject({ offset: 20 });
   });
 });

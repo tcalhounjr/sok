@@ -324,10 +324,63 @@ export const searchFieldResolvers = {
     return records.map(r => toObject(r.get('d')));
   },
 
-  articles: async (parent: SearchNode, _args: unknown, { driver }: ApolloContext) => {
-    const records = await runQuery(driver,
-      'MATCH (s:Search {id: $id})-[:MATCHES]->(a:Article) RETURN a ORDER BY a.publishedAt DESC LIMIT 200',
+  articles: async (
+    parent: SearchNode,
+    { offset = 0 }: { offset?: number },
+    { driver }: ApolloContext
+  ) => {
+    // Fetch all FilterPreset nodes attached to this search via HAS_FILTER edges.
+    const filterRecords = await runQuery(driver,
+      'MATCH (s:Search {id: $id})-[:HAS_FILTER]->(f:FilterPreset) RETURN f',
       { id: parent.id });
+
+    const filters = filterRecords.map(r => toObject(r.get('f')) as { type: string; value: string });
+
+    // Base query — join source node so SOURCE_TIER / REGION / LANGUAGE filters can reference it.
+    let cypher = `
+      MATCH (s:Search {id: $id})-[:MATCHES]->(a:Article)
+      MATCH (a)-[:PUBLISHED_BY]->(src:Source)
+    `;
+
+    const whereClauses: string[] = [];
+    const params: Record<string, unknown> = { id: parent.id, offset };
+
+    for (const filter of filters) {
+      switch (filter.type) {
+        case 'SENTIMENT':
+          whereClauses.push('a.sentiment = $sentimentValue');
+          params.sentimentValue = filter.value;
+          break;
+        case 'SOURCE_TIER':
+          whereClauses.push('src.tier = toInteger($tierValue)');
+          params.tierValue = filter.value;
+          break;
+        case 'REGION':
+          whereClauses.push('src.region = $regionValue');
+          params.regionValue = filter.value;
+          break;
+        case 'LANGUAGE':
+          whereClauses.push('a.language = $languageValue');
+          params.languageValue = filter.value;
+          break;
+        case 'DATE_RANGE': {
+          // Value format: "startDate,endDate"
+          const [start, end] = filter.value.split(',');
+          whereClauses.push('a.publishedAt >= $dateRangeStart AND a.publishedAt <= $dateRangeEnd');
+          params.dateRangeStart = start.trim();
+          params.dateRangeEnd   = end.trim();
+          break;
+        }
+      }
+    }
+
+    if (whereClauses.length > 0) {
+      cypher += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
+
+    cypher += ' RETURN a ORDER BY a.publishedAt DESC SKIP $offset LIMIT 200';
+
+    const records = await runQuery(driver, cypher, params);
     return records.map(r => toObject(r.get('a')));
   },
 };
