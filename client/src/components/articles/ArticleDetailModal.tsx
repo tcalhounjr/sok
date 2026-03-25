@@ -33,7 +33,7 @@ function sentimentBarColor(s: string): string {
 }
 
 function isSafeUrl(url: string): boolean {
-  return /^https?:\/\//.test(url);
+  return /^https:\/\//.test(url);
 }
 
 export function ArticleDetailModal({ articleId, onClose }: ArticleDetailModalProps) {
