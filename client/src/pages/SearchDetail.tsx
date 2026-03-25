@@ -12,6 +12,7 @@ import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import { ForkModal } from '../components/search/ForkModal';
 import { ArticleDetailModal } from '../components/articles/ArticleDetailModal';
 import { timeAgo } from '../lib/utils';
+import type { Search, Article, FilterPreset } from '../types';
 
 const PAGE_SIZE = 200;
 
@@ -21,29 +22,34 @@ export function SearchDetail() {
   const [forkOpen, setForkOpen] = useState(false);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_SEARCH, {
-    variables: { id, limit: PAGE_SIZE, offset: 0 },
+    variables: { id, offset: 0 },
   });
-  const search = data?.search;
+  const search: Search | undefined = data?.search;
 
   const [removeFilter] = useMutation(REMOVE_FILTER_FROM_SEARCH, {
-    refetchQueries: [{ query: GET_SEARCH, variables: { id, limit: PAGE_SIZE, offset: 0 } }],
+    refetchQueries: [{ query: GET_SEARCH, variables: { id, offset: 0 } }],
   });
 
   function handleLoadMore() {
     const nextOffset = offset + PAGE_SIZE;
     fetchMore({
-      variables: { id, limit: PAGE_SIZE, offset: nextOffset },
+      variables: { id, offset: nextOffset },
       updateQuery(prev, { fetchMoreResult }) {
         if (!fetchMoreResult) return prev;
+        const newArticles: Article[] = fetchMoreResult.search.articles ?? [];
+        if (newArticles.length < PAGE_SIZE) {
+          setHasMore(false);
+        }
         return {
           ...prev,
           search: {
             ...prev.search,
             articles: [
               ...(prev.search.articles ?? []),
-              ...(fetchMoreResult.search.articles ?? []),
+              ...newArticles,
             ],
           },
         };
@@ -73,13 +79,11 @@ export function SearchDetail() {
     <div className="p-8 text-on_surface_variant text-body-md">Search not found.</div>
   );
 
-  const parentPath = search.parents?.length
-    ? search.parents.map((p: any) => p.name).join(' + ')
+  const parentPath: string | null = search.parents?.length
+    ? search.parents.map((p: Search) => p.name).join(' + ')
     : null;
 
-  const articles: any[] = search.articles ?? [];
-  const totalArticles: number = search.totalArticles ?? articles.length;
-  const hasMore = articles.length < totalArticles;
+  const articles: Article[] = search.articles ?? [];
 
   return (
     <>
@@ -170,9 +174,9 @@ export function SearchDetail() {
                     <button className="btn-secondary text-xs py-1">Import</button>
                   </div>
                 </div>
-                {search.filters?.length > 0 ? (
+                {search.filters && search.filters.length > 0 ? (
                   <div className="space-y-3">
-                    {search.filters.map((f: any) => (
+                    {search.filters.map((f: FilterPreset) => (
                       <div key={f.id} className="p-3 bg-surface_container_high rounded-sm ghost-border">
                         <div className="flex items-center justify-between mb-1">
                           <p className="overline text-on_tertiary_container">{f.type}</p>
@@ -197,7 +201,7 @@ export function SearchDetail() {
                   <div>
                     <p className="overline text-on_surface_variant mb-1">SIGNAL DENSITY</p>
                     <p className="font-display font-bold text-headline-sm text-on_surface">
-                      {totalArticles}
+                      {articles.length}
                     </p>
                   </div>
                   <div>
@@ -233,12 +237,12 @@ export function SearchDetail() {
                 {/* Article count label */}
                 {articles.length > 0 && (
                   <p className="text-label-sm text-on_surface_variant font-body mb-3">
-                    Showing {articles.length} of {totalArticles} articles
+                    Showing {articles.length} articles
                   </p>
                 )}
 
                 <div className="space-y-4 flex-1">
-                  {articles.slice(0, 5).map((article: any) => (
+                  {articles.slice(0, 5).map((article: Article) => (
                     <button
                       key={article.id}
                       onClick={() => setSelectedArticleId(article.id)}
@@ -257,7 +261,7 @@ export function SearchDetail() {
                         {article.headline}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <Badge variant={article.sentiment.toLowerCase() as any}>{article.sentiment}</Badge>
+                        <Badge variant={article.sentiment.toLowerCase() as 'positive' | 'neutral' | 'negative'}>{article.sentiment}</Badge>
                       </div>
                     </button>
                   ))}

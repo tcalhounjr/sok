@@ -31,11 +31,10 @@ export const GET_SEARCHES = gql`
 
 export const GET_SEARCH = gql`
   ${SEARCH_CORE}
-  query GetSearch($id: ID!, $limit: Int, $offset: Int) {
+  query GetSearch($id: ID!, $offset: Int) {
     search(id: $id) {
       ...SearchCore
-      totalArticles
-      articles(limit: $limit, offset: $offset) {
+      articles(offset: $offset) {
         id headline publishedAt sentiment
         source { id name tier region }
         topics { id label }
@@ -152,6 +151,7 @@ export const GET_NARRATIVE_TRENDS = gql`
       }
       topSources { source { id name domain tier region } count }
       topTopics  { topic  { id label category }           count }
+      narrativeShifts { type title body timestamp live }
     }
   }
 `;

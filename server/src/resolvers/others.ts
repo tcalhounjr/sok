@@ -1,5 +1,6 @@
 import { runQuery, toObject } from '../neo4j/driver.js';
 import { randomUUID } from 'crypto';
+import { GraphQLError } from 'graphql';
 import {
   ApolloContext, FilterPresetNode, CollectionNode,
   ArticleNode, TopicNode, SourceNode,
@@ -7,17 +8,21 @@ import {
 } from '../types/index.js';
 import { requireAuth } from '../auth/middleware.js';
 
+const DATE_RANGE_RE = /^\d{4}-\d{2}-\d{2},\d{4}-\d{2}-\d{2}$/;
+
 // ---------------------------------------------------------------------------
 // Filter Preset
 // ---------------------------------------------------------------------------
 
 export const filterPresetQueries = {
-  filterPreset: async (_: unknown, { id }: { id: string }, { driver }: ApolloContext) => {
+  filterPreset: async (_: unknown, { id }: { id: string }, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (f:FilterPreset {id: $id}) RETURN f', { id });
     return records.length ? toObject(records[0].get('f')) as FilterPresetNode : null;
   },
 
-  filterPresets: async (_: unknown, __: unknown, { driver }: ApolloContext) => {
+  filterPresets: async (_: unknown, __: unknown, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (f:FilterPreset) RETURN f ORDER BY f.name');
     return records.map(r => toObject(r.get('f')) as FilterPresetNode);
   },
@@ -30,6 +35,12 @@ export const filterPresetMutations = {
     { driver, callerId }: ApolloContext
   ) => {
     requireAuth(callerId);
+    if (input.type === 'DATE_RANGE' && !DATE_RANGE_RE.test(input.value)) {
+      throw new GraphQLError(
+        'DATE_RANGE value must be in YYYY-MM-DD,YYYY-MM-DD format',
+        { extensions: { code: 'BAD_USER_INPUT' } },
+      );
+    }
     const id = randomUUID();
     const records = await runQuery(driver,
       'CREATE (f:FilterPreset {id: $id, name: $name, type: $type, value: $value}) RETURN f',
@@ -43,6 +54,20 @@ export const filterPresetMutations = {
     { driver, callerId }: ApolloContext
   ) => {
     requireAuth(callerId);
+    // Determine the effective type for DATE_RANGE validation. The caller may
+    // update type and value in the same request, or update only value while the
+    // stored type is DATE_RANGE (we validate conservatively on value format).
+    const effectiveType = input.type ?? undefined;
+    if (
+      input.value !== undefined &&
+      effectiveType === 'DATE_RANGE' &&
+      !DATE_RANGE_RE.test(input.value)
+    ) {
+      throw new GraphQLError(
+        'DATE_RANGE value must be in YYYY-MM-DD,YYYY-MM-DD format',
+        { extensions: { code: 'BAD_USER_INPUT' } },
+      );
+    }
     const setClauses: string[] = [];
     const params: Record<string, unknown> = { id };
     if (input.name  !== undefined) { setClauses.push('f.name = $name');   params.name  = input.name; }
@@ -105,12 +130,14 @@ export const filterPresetFieldResolvers = {
 // ---------------------------------------------------------------------------
 
 export const collectionQueries = {
-  collection: async (_: unknown, { id }: { id: string }, { driver }: ApolloContext) => {
+  collection: async (_: unknown, { id }: { id: string }, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (c:Collection {id: $id}) RETURN c', { id });
     return records.length ? toObject(records[0].get('c')) as CollectionNode : null;
   },
 
-  collections: async (_: unknown, __: unknown, { driver }: ApolloContext) => {
+  collections: async (_: unknown, __: unknown, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (c:Collection) RETURN c ORDER BY c.name');
     return records.map(r => toObject(r.get('c')) as CollectionNode);
   },
@@ -243,7 +270,8 @@ export const collectionFieldResolvers = {
 // ---------------------------------------------------------------------------
 
 export const articleQueries = {
-  article: async (_: unknown, { id }: { id: string }, { driver }: ApolloContext) => {
+  article: async (_: unknown, { id }: { id: string }, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (a:Article {id: $id}) RETURN a', { id });
     return records.length ? toObject(records[0].get('a')) as ArticleNode : null;
   },
@@ -251,8 +279,9 @@ export const articleQueries = {
   articles: async (
     _: unknown,
     { searchId, sentiment, sourceId }: { searchId?: string; sentiment?: string; sourceId?: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
     let cypher = searchId
       ? 'MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)'
       : 'MATCH (a:Article)';
@@ -266,7 +295,7 @@ export const articleQueries = {
       params.sourceId = sourceId;
     }
     if (conditions.length) cypher += ` WHERE ${conditions.join(' AND ')}`;
-    cypher += ' RETURN a ORDER BY a.publishedAt DESC';
+    cypher += ' RETURN a ORDER BY a.publishedAt DESC LIMIT 200';
 
     const records = await runQuery(driver, cypher, params);
     return records.map(r => toObject(r.get('a')) as ArticleNode);
@@ -297,11 +326,15 @@ export const articleFieldResolvers = {
 // Sources (SOK-70)
 // ---------------------------------------------------------------------------
 
+const SOURCE_ARTICLES_LIMIT_MIN = 1;
+const SOURCE_ARTICLES_LIMIT_MAX = 200;
+
 export const sourceQueries = {
   /**
    * Fetches a single Source node by id, including tier, region, language, name.
    */
-  source: async (_: unknown, { id }: { id: string }, { driver }: ApolloContext) => {
+  source: async (_: unknown, { id }: { id: string }, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (src:Source {id: $id}) RETURN src', { id });
     return records.length ? toObject(records[0].get('src')) as SourceNode : null;
   },
@@ -310,14 +343,30 @@ export const sourceQueries = {
    * Fetches articles PUBLISHED_BY the given source. Optionally filters to
    * articles that also MATCH a specific search. Supports limit and offset for
    * pagination.
+   *
+   * limit must be between 1 and 200 (inclusive).
+   * offset must be >= 0.
    */
   sourceArticles: async (
     _: unknown,
     { sourceId, searchId, limit = 20, offset = 0 }: {
       sourceId: string; searchId?: string; limit?: number; offset?: number;
     },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ) => {
+    requireAuth(callerId);
+    if (limit < SOURCE_ARTICLES_LIMIT_MIN || limit > SOURCE_ARTICLES_LIMIT_MAX) {
+      throw new GraphQLError(
+        `limit must be between ${SOURCE_ARTICLES_LIMIT_MIN} and ${SOURCE_ARTICLES_LIMIT_MAX}`,
+        { extensions: { code: 'BAD_USER_INPUT' } },
+      );
+    }
+    if (offset < 0) {
+      throw new GraphQLError(
+        'offset must be >= 0',
+        { extensions: { code: 'BAD_USER_INPUT' } },
+      );
+    }
     let cypher: string;
     const params: Record<string, unknown> = { sourceId, limit, offset };
 
@@ -345,7 +394,8 @@ export const sourceQueries = {
 // ---------------------------------------------------------------------------
 
 export const topicQueries = {
-  topics: async (_: unknown, __: unknown, { driver }: ApolloContext) => {
+  topics: async (_: unknown, __: unknown, { driver, callerId }: ApolloContext) => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (t:Topic) RETURN t ORDER BY t.label');
     return records.map(r => toObject(r.get('t')) as TopicNode);
   },
@@ -368,10 +418,12 @@ export const topicFieldResolvers = {
 // Narrative Trends — DD-3: live Cypher aggregation
 // ---------------------------------------------------------------------------
 
+type NarrativeInterval = 'L7D' | 'L30D' | 'L90D';
+
 export const narrativeTrendsQuery = {
   narrativeTrends: async (
     _: unknown,
-    { searchId, interval = 'day' }: { searchId: string; interval?: string },
+    { searchId, interval }: { searchId: string; interval?: NarrativeInterval },
     { driver, callerId }: ApolloContext
   ): Promise<NarrativeTrends> => {
     requireAuth(callerId);
@@ -527,7 +579,7 @@ export const narrativeTrendsQuery = {
     const MAX_SHIFTS = 3;
 
     return {
-      searchId, searchName, interval, volumeOverTime,
+      searchId, searchName, interval: interval ?? 'ALL', volumeOverTime,
       sentimentBreakdown: {
         positive: totPos, neutral: totNeu, negative: totNeg,
         total: totalArticles,

@@ -11,26 +11,9 @@ import { SentimentBreakdown } from '../components/trends/SentimentBreakdown';
 import { TopicCloud } from '../components/trends/TopicCloud';
 import { SourceRankings } from '../components/trends/SourceRankings';
 import { NarrativeShiftCard } from '../components/trends/NarrativeShiftCard';
+import type { NarrativeShift } from '../types';
 
 const INTERVALS = ['L7D', 'L30D', 'L90D'] as const;
-
-const NARRATIVE_SHIFTS = [
-  {
-    type: 'EMERGENT TOPIC'   as const, live: true,  time: 'LIVE',
-    title: 'Sub-narrative: AI Hardware Demand',
-    body: 'Significant spike in mentions related to proprietary AI chips and local manufacturing dependencies.',
-  },
-  {
-    type: 'SENTIMENT SHIFT'  as const, live: false, time: '2h ago',
-    title: 'Neutral Transition: Export Bans',
-    body: 'High-volume coverage transitioning from critical to descriptive as legislative impacts become clearer.',
-  },
-  {
-    type: 'ANOMALY DETECTED' as const, live: false, time: '5h ago',
-    title: 'Coverage Gap: Southeast Asia',
-    body: 'Unexpected drop in regional reporting from Tier 1 sources despite active regulatory developments.',
-  },
-];
 
 export function NarrativeTrends() {
   const { id } = useParams<{ id: string }>();
@@ -150,11 +133,17 @@ export function NarrativeTrends() {
               <h3 className="font-display font-semibold text-on_surface text-sm mb-4">
                 Recent Narrative Shifts
               </h3>
-              <div className="grid grid-cols-3 gap-4">
-                {NARRATIVE_SHIFTS.map((shift, i) => (
-                  <NarrativeShiftCard key={i} {...shift} />
-                ))}
-              </div>
+              {(trends?.narrativeShifts ?? []).length === 0 && !loading ? (
+                <p className="text-body-sm text-on_surface_variant font-body">
+                  No significant shifts detected in this period.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  {(trends?.narrativeShifts ?? []).map((shift: NarrativeShift, i: number) => (
+                    <NarrativeShiftCard key={i} {...shift} />
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}

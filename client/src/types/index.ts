@@ -71,6 +71,16 @@ export interface Topic {
   category: string;
 }
 
+export type NarrativeShiftType = 'EMERGENT TOPIC' | 'SENTIMENT SHIFT' | 'ANOMALY DETECTED';
+
+export interface NarrativeShift {
+  type: NarrativeShiftType;
+  title: string;
+  body: string;
+  timestamp: string;
+  live: boolean;
+}
+
 export interface NarrativeTrends {
   searchId: string;
   searchName: string;
@@ -80,6 +90,7 @@ export interface NarrativeTrends {
   sentimentBreakdown: SentimentBreakdown;
   topSources: TopSourceCount[];
   topTopics: TopTopicCount[];
+  narrativeShifts: NarrativeShift[];
 }
 
 export interface DailyVolume {

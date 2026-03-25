@@ -266,25 +266,25 @@ describe('NarrativeTrends — interval switching', () => {
 });
 
 // ===========================================================================
-// View toggle (current / parent)
+// Interval controls (L7D / L30D / L90D) — replaces the removed view toggle
 // ===========================================================================
 
-describe('NarrativeTrends — view toggle', () => {
+describe('NarrativeTrends — interval controls', () => {
   beforeEach(() => {
     mockUseQuery.mockReturnValue({ data: { narrativeTrends: TRENDS_FIXTURE }, loading: false });
   });
 
-  it('should render both Current Search and Parent Narrative toggle buttons', () => {
+  it('should render all three interval buttons (L7D, L30D, L90D)', () => {
     renderPage();
-    expect(screen.getByText('Current Search')).toBeDefined();
-    expect(screen.getByText('Parent Narrative')).toBeDefined();
+    expect(screen.getByText('L7D')).toBeDefined();
+    expect(screen.getByText('L30D')).toBeDefined();
+    expect(screen.getByText('L90D')).toBeDefined();
   });
 
-  it('should toggle to Parent Narrative view when the Parent Narrative button is clicked', async () => {
+  it('should keep the L30D button in the DOM after it is clicked without crashing', async () => {
     renderPage();
-    await userEvent.click(screen.getByText('Parent Narrative'));
-    // Verify no crash and the button is still present
-    expect(screen.getByText('Parent Narrative')).toBeDefined();
+    await userEvent.click(screen.getByText('L30D'));
+    expect(screen.getByText('L30D')).toBeDefined();
   });
 });
 

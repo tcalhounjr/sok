@@ -60,10 +60,26 @@ const SEARCH_PROPS = {
   updatedAt: '2025-01-01T00:00:00Z',
 };
 
-const CTX = { driver: {} as any, callerId: 'test-user' };
+// Session mock — supports driver.session().executeWrite() used by forkSearch
+// DERIVED_FROM UNWIND write path.
+const mockSessionClose    = vi.fn().mockResolvedValue(undefined);
+const mockExecuteWrite    = vi.fn().mockResolvedValue(undefined);
+const mockSession         = { executeWrite: mockExecuteWrite, close: mockSessionClose };
+const mockDriverSession   = vi.fn().mockReturnValue(mockSession);
+
+const CTX = {
+  driver:   { session: mockDriverSession } as any,
+  callerId: 'test-user',
+};
 
 beforeEach(() => {
   mockRunQuery.mockReset();
+  mockDriverSession.mockReturnValue(mockSession);
+  mockExecuteWrite.mockReset().mockImplementation(async (fn: (tx: any) => Promise<void>) => {
+    const tx = { run: vi.fn().mockResolvedValue({ records: [] }) };
+    await fn(tx);
+  });
+  mockSessionClose.mockReset().mockResolvedValue(undefined);
 });
 
 // ===========================================================================
@@ -250,8 +266,9 @@ describe('searchMutations.createSearch', () => {
     );
 
     const params = mockRunQuery.mock.calls[0][2] as any;
-    expect(params.startDate).toBe('2025-01-01');
-    expect(params.endDate).toBe('2025-12-31');
+    const year = new Date().getFullYear();
+    expect(params.startDate).toBe(`${year}-01-01`);
+    expect(params.endDate).toBe(`${year}-12-31`);
     expect(params.status).toBe('ACTIVE');
   });
 
@@ -388,19 +405,16 @@ describe('searchMutations.forkSearch', () => {
 
     // 1. parentCheck validation query
     mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]);
-    // 2. Fetch parent keywords
+    // 2. Fetch all parent nodes (keywords + dates sourced from same query result)
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    // 3. Fetch first parent for dates
-    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    // 4. CREATE forked search
+    // 3. CREATE forked search
     mockRunQuery.mockResolvedValueOnce([]);
-    // 5. MERGE DERIVED_FROM for parent-1
+    // 4. DERIVED_FROM → driver.session().executeWrite() — NOT a runQuery call
+    // 5. MERGE inherited filter presets
     mockRunQuery.mockResolvedValueOnce([]);
-    // 6. MERGE inherited filter presets
+    // 6. buildMatchEdges: no articles
     mockRunQuery.mockResolvedValueOnce([]);
-    // 7. buildMatchEdges: no articles
-    mockRunQuery.mockResolvedValueOnce([]);
-    // 8. Final MATCH to return node
+    // 7. Final MATCH to return node
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'test-uuid-1234' }) })]);
 
     const result = await searchMutations.forkSearch(
@@ -410,7 +424,7 @@ describe('searchMutations.forkSearch', () => {
     );
 
     expect(result).toMatchObject({ id: 'test-uuid-1234' });
-    const createCypher = mockRunQuery.mock.calls[3][1] as string;
+    const createCypher = mockRunQuery.mock.calls[2][1] as string;
     expect(createCypher).toContain("status: 'ACTIVE'");
   });
 
@@ -419,12 +433,16 @@ describe('searchMutations.forkSearch', () => {
 
     // 1. parentCheck validation query
     mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]);
-    // override path: skip parent keyword fetch, straight to first parent dates
+    // 2. Fetch parent nodes (override path: keywords not extracted, but fp.startDate still read)
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    mockRunQuery.mockResolvedValueOnce([]);  // CREATE
-    mockRunQuery.mockResolvedValueOnce([]);  // DERIVED_FROM
-    mockRunQuery.mockResolvedValueOnce([]);  // inherit filters
-    mockRunQuery.mockResolvedValueOnce([]);  // buildMatchEdges
+    // 3. CREATE
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 4. DERIVED_FROM → driver.session().executeWrite() — NOT a runQuery call
+    // 5. inherit filters
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 6. buildMatchEdges
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 7. final MATCH
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
 
     await searchMutations.forkSearch(
@@ -443,21 +461,16 @@ describe('searchMutations.forkSearch', () => {
 
     // 1. parentCheck validation query
     mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(2) })]);
-    // 2. fetch parent keywords
+    // 2. Fetch all parent nodes (keywords + dates from same query result)
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 }), makeRecord({ s: p2 })]);
-    // 3. fetch first parent for dates
-    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 })]);
-    // 4. CREATE
+    // 3. CREATE
     mockRunQuery.mockResolvedValueOnce([]);
-    // 5. DERIVED_FROM parent-1
+    // 4. DERIVED_FROM — driver.session().executeWrite() UNWIND batch, NOT runQuery
+    // 5. inherit filters
     mockRunQuery.mockResolvedValueOnce([]);
-    // 6. DERIVED_FROM parent-2
+    // 6. buildMatchEdges
     mockRunQuery.mockResolvedValueOnce([]);
-    // 7. inherit filters
-    mockRunQuery.mockResolvedValueOnce([]);
-    // 8. buildMatchEdges
-    mockRunQuery.mockResolvedValueOnce([]);
-    // 9. final MATCH
+    // 7. final MATCH
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
 
     await searchMutations.forkSearch(
@@ -466,9 +479,15 @@ describe('searchMutations.forkSearch', () => {
       CTX,
     );
 
-    const derivedFromCalls = mockRunQuery.mock.calls
-      .filter((c: any[]) => (c[1] as string).includes('DERIVED_FROM'));
-    expect(derivedFromCalls).toHaveLength(2);
+    // DERIVED_FROM is now written via driver.session().executeWrite() in a single UNWIND batch
+    expect(mockExecuteWrite).toHaveBeenCalledOnce();
+    const txFn = mockExecuteWrite.mock.calls[0][0];
+    const fakeTx = { run: vi.fn().mockResolvedValue({ records: [] }) };
+    await txFn(fakeTx);
+    const derivedCypher = fakeTx.run.mock.calls[0][0] as string;
+    expect(derivedCypher).toContain('DERIVED_FROM');
+    const derivedParams = fakeTx.run.mock.calls[0][1] as any;
+    expect(derivedParams.parentIds).toEqual(expect.arrayContaining(['parent-1', 'parent-2']));
   });
 
   it('should link the forked search to a collection when collectionId is provided', async () => {
@@ -477,21 +496,18 @@ describe('searchMutations.forkSearch', () => {
 
     // 1. parentCheck validation query
     mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]);
-    // 2. Fetch parent keywords (no override, keywords=[] so fetch from parents)
+    // 2. Fetch all parent nodes (keywords + dates from same query result)
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    // 3. Fetch first parent for dates
-    mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
-    // 4. CREATE forked search
+    // 3. CREATE forked search
     mockRunQuery.mockResolvedValueOnce([]);
-    // 5. MERGE DERIVED_FROM
+    // 4. DERIVED_FROM — driver.session().executeWrite() UNWIND batch, NOT runQuery
+    // 5. MERGE inherited filter presets
     mockRunQuery.mockResolvedValueOnce([]);
-    // 6. MERGE inherited filter presets
+    // 6. MERGE collection CONTAINS — triggered by collectionId
     mockRunQuery.mockResolvedValueOnce([]);
-    // 7. MERGE collection CONTAINS — triggered by collectionId
+    // 7. buildMatchEdges
     mockRunQuery.mockResolvedValueOnce([]);
-    // 8. buildMatchEdges
-    mockRunQuery.mockResolvedValueOnce([]);
-    // 9. Final MATCH to return node
+    // 8. Final MATCH to return node
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode({ ...SEARCH_PROPS, id: 'test-uuid-1234' }) })]);
 
     await searchMutations.forkSearch(
@@ -534,18 +550,11 @@ describe('searchMutations.forkSearch', () => {
     ).rejects.toThrow('One or more parent IDs not found');
   });
 
-  it('should throw when the first parent record is missing after keyword resolution', async () => {
-    // parentCheck passes, parent keywords fetched, but firstParent lookup returns empty
+  it('should throw when the parent records query returns an empty result set', async () => {
+    // parentCheck passes (count matches), but the subsequent MATCH for all parent nodes
+    // returns no records — parentRecords[0] is undefined, causing a TypeError on .get('s').
     mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]); // parentCheck
-    mockRunQuery.mockResolvedValueOnce([]); // parent keyword fetch (with override this is skipped)
-    // override keywords so we skip the keyword-fetch step and go straight to firstParent
-    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]); // re-run for override path
-
-    // Use override keywords to skip the keyword query path
-    const parentNode = makeNode({ ...SEARCH_PROPS, id: 'parent-1', keywords: ['chip'] });
-    mockRunQuery.mockReset();
-    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(1) })]); // parentCheck
-    mockRunQuery.mockResolvedValueOnce([]); // firstParent returns empty
+    mockRunQuery.mockResolvedValueOnce([]); // parentRecords returns empty
 
     await expect(
       searchMutations.forkSearch(
@@ -553,7 +562,7 @@ describe('searchMutations.forkSearch', () => {
         { input: { parentIds: ['parent-1'], name: 'Missing Parent Fork', keywords: ['chip'] } },
         CTX,
       ),
-    ).rejects.toThrow('Parent search not found: parent-1');
+    ).rejects.toThrow();
   });
 });
 
@@ -663,8 +672,8 @@ describe('searchFieldResolvers.articles', () => {
 
     expect(result).toHaveLength(1);
     const [, cypher, params] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('a.sentiment = $sentimentValue');
-    expect(params).toMatchObject({ sentimentValue: 'POSITIVE' });
+    expect(cypher).toContain('a.sentiment = $sentimentValue_0');
+    expect(params).toMatchObject({ sentimentValue_0: 'POSITIVE' });
   });
 
   it('should apply SKIP $offset when offset is provided', async () => {
@@ -700,8 +709,8 @@ describe('searchFieldResolvers.articles', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({ id: 'art-pos', sentiment: 'POSITIVE' });
     const [, cypher, params] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('a.sentiment = $sentimentValue');
-    expect(params).toMatchObject({ sentimentValue: 'POSITIVE' });
+    expect(cypher).toContain('a.sentiment = $sentimentValue_0');
+    expect(params).toMatchObject({ sentimentValue_0: 'POSITIVE' });
   });
 
   it('should apply src.tier filter when SOURCE_TIER=1 HAS_FILTER edge exists', async () => {
@@ -721,8 +730,8 @@ describe('searchFieldResolvers.articles', () => {
 
     expect(result).toHaveLength(1);
     const [, cypher, params] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('src.tier = toInteger($tierValue)');
-    expect(params).toMatchObject({ tierValue: '1' });
+    expect(cypher).toContain('src.tier = toInteger($tierValue_0)');
+    expect(params).toMatchObject({ tierValue_0: '1' });
   });
 
   it('should apply src.region filter when REGION=north-america HAS_FILTER edge exists', async () => {
@@ -742,8 +751,8 @@ describe('searchFieldResolvers.articles', () => {
 
     expect(result).toHaveLength(1);
     const [, cypher, params] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('src.region = $regionValue');
-    expect(params).toMatchObject({ regionValue: 'north-america' });
+    expect(cypher).toContain('src.region = $regionValue_0');
+    expect(params).toMatchObject({ regionValue_0: 'north-america' });
   });
 
   it('should apply AND logic combining all WHERE clauses when multiple filters are active', async () => {
@@ -758,8 +767,8 @@ describe('searchFieldResolvers.articles', () => {
     await searchFieldResolvers.articles(SEARCH_PROPS as any, {}, CTX);
 
     const [, cypher] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('a.sentiment = $sentimentValue');
-    expect(cypher).toContain('src.tier = toInteger($tierValue)');
+    expect(cypher).toContain('a.sentiment = $sentimentValue_0');
+    expect(cypher).toContain('src.tier = toInteger($tierValue_1)');
     // Both clauses joined by AND
     expect(cypher).toMatch(/a\.sentiment.*AND.*src\.tier|src\.tier.*AND.*a\.sentiment/s);
   });

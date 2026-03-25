@@ -8,6 +8,12 @@ export const typeDefs = `#graphql
     DATE_RANGE
   }
 
+  enum NarrativeInterval {
+    L7D
+    L30D
+    L90D
+  }
+
   enum Sentiment {
     POSITIVE
     NEUTRAL
@@ -232,7 +238,7 @@ export const typeDefs = `#graphql
     article(id: ID!): Article
     articles(searchId: ID, sentiment: Sentiment, sourceId: ID): [Article!]!
     topics: [Topic!]!
-    narrativeTrends(searchId: ID!, interval: String): NarrativeTrends!
+    narrativeTrends(searchId: ID!, interval: NarrativeInterval): NarrativeTrends!
     volumeProjection(keywords: [String!]!): VolumeProjection!
   }
 

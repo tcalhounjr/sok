@@ -668,7 +668,7 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
     expect(result.topTopics).toEqual([]);
   });
 
-  it('should use the default interval value of day when none is supplied', async () => {
+  it('should return ALL as interval when none is supplied', async () => {
     mockRunQuery.mockResolvedValueOnce([]);
     mockRunQuery.mockResolvedValueOnce([]);
     mockRunQuery.mockResolvedValueOnce([]);
@@ -678,7 +678,7 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
       null, { searchId: 'search-1' }, CTX,
     );
 
-    expect(result.interval).toBe('day');
+    expect(result.interval).toBe('ALL');
   });
 
   it('should propagate custom interval value when one is provided', async () => {
@@ -688,10 +688,10 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'S' })]);
 
     const result = await narrativeTrendsQuery.narrativeTrends(
-      null, { searchId: 'search-1', interval: 'week' }, CTX,
+      null, { searchId: 'search-1', interval: 'L30D' }, CTX,
     );
 
-    expect(result.interval).toBe('week');
+    expect(result.interval).toBe('L30D');
   });
 
   it('should fall back to searchId as name when no search record is returned', async () => {
@@ -866,10 +866,10 @@ describe('collectionFieldResolvers.sentimentSummary', () => {
       neutral:  4,
       negative: 2,
     });
-    expect(result.positivePercent).toBe(40);
-    expect(result.neutralPercent).toBe(40);
-    expect(result.negativePercent).toBe(20);
-    expect(result.periodShift).toBeNull();
+    expect(result!.positivePercent).toBe(40);
+    expect(result!.neutralPercent).toBe(40);
+    expect(result!.negativePercent).toBe(20);
+    expect(result!.periodShift).toBeNull();
   });
 
   it('should return null when the collection has no articles', async () => {
