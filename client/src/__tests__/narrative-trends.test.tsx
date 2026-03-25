@@ -15,9 +15,10 @@ import React from 'react';
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockUseQuery, mockUseParams } = vi.hoisted(() => ({
-  mockUseQuery:  vi.fn(),
-  mockUseParams: vi.fn(),
+const { mockUseQuery, mockUseParams, mockNavigate } = vi.hoisted(() => ({
+  mockUseQuery:   vi.fn(),
+  mockUseParams:  vi.fn(),
+  mockNavigate:   vi.fn(),
 }));
 
 vi.mock('@apollo/client', () => ({
@@ -26,7 +27,8 @@ vi.mock('@apollo/client', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-  useParams: () => mockUseParams(),
+  useParams:   () => mockUseParams(),
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('../components/ui/Skeleton', () => ({
@@ -110,6 +112,7 @@ const TRENDS_FIXTURE = {
 
 beforeEach(() => {
   mockUseQuery.mockReset();
+  mockNavigate.mockReset();
   mockUseParams.mockReturnValue({ id: 'search-1' });
 });
 
@@ -296,7 +299,6 @@ describe('NarrativeTrends — sidebar navigation', () => {
 
   it('should render the sidebar navigation labels', () => {
     renderPage();
-    expect(screen.getByText('PINNED')).toBeDefined();
     expect(screen.getByText('RECENT')).toBeDefined();
     expect(screen.getByText('LINEAGE')).toBeDefined();
     expect(screen.getByText('SOURCES')).toBeDefined();

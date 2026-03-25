@@ -7,6 +7,7 @@ import { LineageExplorer }     from './pages/LineageExplorer';
 import { NarrativeTrends }     from './pages/NarrativeTrends';
 import { FilterPresetLibrary } from './pages/FilterPresetLibrary';
 import { CollectionManagement } from './pages/CollectionManagement';
+import { SourceDetail }        from './pages/SourceDetail';
 
 export default function App() {
   return (
@@ -34,6 +35,9 @@ export default function App() {
 
         {/* Screen 9 — Narrative Trends */}
         <Route path="trends/:id" element={<NarrativeTrends />} />
+
+        {/* Screen 10 — Source Detail */}
+        <Route path="source/:id" element={<SourceDetail />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

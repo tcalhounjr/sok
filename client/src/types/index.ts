@@ -22,12 +22,20 @@ export interface FilterPreset {
   searches?: Search[];
 }
 
+export interface SentimentSummary {
+  positivePercent: number;
+  neutralPercent: number;
+  negativePercent: number;
+}
+
 export interface Collection {
   id: string;
   name: string;
   description?: string;
   createdAt: string;
   searches?: Search[];
+  totalArticles?: number;
+  sentimentSummary?: SentimentSummary;
 }
 
 export interface Article {

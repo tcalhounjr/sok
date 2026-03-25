@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { GET_NARRATIVE_TRENDS } from '../apollo/queries';
 import { StatusDot } from '../components/ui/StatusDot';
@@ -34,7 +34,9 @@ const NARRATIVE_SHIFTS = [
 
 export function NarrativeTrends() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [interval, setIntervalVal] = useState('L7D');
+  const sourceRankingsRef = useRef<HTMLDivElement | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_NARRATIVE_TRENDS, {
     variables: { searchId: id, interval },
@@ -49,14 +51,25 @@ export function NarrativeTrends() {
       <aside className="w-44 flex-shrink-0 p-5 border-r border-surface_bright/10">
         <div className="space-y-0.5">
           {[
-            { label: 'PINNED',    active: false },
-            { label: 'RECENT',    active: true  },
-            { label: 'LIBRARIES', active: false },
-            { label: 'LINEAGE',   active: false },
-            { label: 'SOURCES',   active: false },
-          ].map(({ label, active }) => (
+            {
+              label: 'RECENT',
+              active: true,
+              onClick: undefined,
+            },
+            {
+              label: 'LINEAGE',
+              active: false,
+              onClick: id ? () => navigate(`/lineage/${id}`) : undefined,
+            },
+            {
+              label: 'SOURCES',
+              active: false,
+              onClick: () => sourceRankingsRef.current?.scrollIntoView({ behavior: 'smooth' }),
+            },
+          ].map(({ label, active, onClick }) => (
             <button
               key={label}
+              onClick={onClick}
               className={`w-full text-left px-3 py-2 rounded-sm text-body-sm font-body transition-colors flex items-center gap-2 ${
                 active
                   ? 'text-on_surface border-l-2 border-secondary pl-2.5'
@@ -123,7 +136,7 @@ export function NarrativeTrends() {
             </div>
 
             {/* Topics + Sources row */}
-            <div className="grid grid-cols-2 gap-5 mb-5">
+            <div className="grid grid-cols-2 gap-5 mb-5" ref={sourceRankingsRef}>
               <TopicCloud topics={trends?.topTopics ?? []} loading={loading} />
               <SourceRankings
                 sources={trends?.topSources ?? []}

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../ui/Skeleton';
 import type { TopSourceCount } from '../../types';
 
@@ -8,6 +9,7 @@ interface SourceRankingsProps {
 }
 
 export function SourceRankings({ sources, totalArticles, loading }: SourceRankingsProps) {
+  const navigate = useNavigate();
   const maxCount = sources[0]?.count ?? 1;
 
   return (
@@ -27,7 +29,12 @@ export function SourceRankings({ sources, totalArticles, loading }: SourceRankin
             return (
               <div key={source.id}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-body-sm text-on_surface font-body">{source.name}</span>
+                  <button
+                    onClick={() => navigate(`/source/${source.id}`)}
+                    className="text-body-sm text-on_surface font-body hover:text-primary transition-colors text-left"
+                  >
+                    {source.name}
+                  </button>
                   <span className="text-label-sm text-on_surface_variant font-body">
                     {count.toLocaleString()} hits
                   </span>
