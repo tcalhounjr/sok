@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { GET_SEARCH_LINEAGE } from '../apollo/queries';
 import { Skeleton } from '../components/ui/Skeleton';
 import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
@@ -13,6 +14,13 @@ export function LineageExplorer() {
   const { id } = useParams<{ id: string }>();
   const { data, loading, error, refetch } = useQuery(GET_SEARCH_LINEAGE, { variables: { id } });
   const [selected, setSelected] = useState<LineageNode | null>(null);
+  const { pushCrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    if (id) {
+      pushCrumb({ label: 'Lineage', path: `/lineage/${id}` });
+    }
+  }, [id, pushCrumb]);
 
   const lineage = data?.searchLineage;
 

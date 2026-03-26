@@ -6,9 +6,10 @@ interface SourceRankingsProps {
   sources: TopSourceCount[];
   totalArticles: number;
   loading: boolean;
+  onViewAll?: () => void;
 }
 
-export function SourceRankings({ sources, totalArticles, loading }: SourceRankingsProps) {
+export function SourceRankings({ sources, totalArticles, loading, onViewAll }: SourceRankingsProps) {
   const navigate = useNavigate();
   const maxCount = sources[0]?.count ?? 1;
 
@@ -16,7 +17,7 @@ export function SourceRankings({ sources, totalArticles, loading }: SourceRankin
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display font-semibold text-on_surface text-sm">Top Sources</h3>
-        <button className="text-label-sm text-primary font-body hover:underline">
+        <button onClick={onViewAll} className="text-label-sm text-primary font-body hover:underline">
           VIEW ALL {totalArticles || ''} SOURCES
         </button>
       </div>

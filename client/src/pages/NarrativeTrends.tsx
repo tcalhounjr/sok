@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { GET_NARRATIVE_TRENDS } from '../apollo/queries';
@@ -11,14 +11,16 @@ import { SentimentBreakdown } from '../components/trends/SentimentBreakdown';
 import { TopicCloud } from '../components/trends/TopicCloud';
 import { SourceRankings } from '../components/trends/SourceRankings';
 import { NarrativeShiftCard } from '../components/trends/NarrativeShiftCard';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 import type { NarrativeShift } from '../types';
 
-const INTERVALS = ['L7D', 'L30D', 'L90D'] as const;
+const INTERVALS = ['ALL', 'L7D', 'L30D', 'L90D'] as const;
 
 export function NarrativeTrends() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [interval, setIntervalVal] = useState('L7D');
+  const { pushCrumb } = useBreadcrumb();
+  const [interval, setIntervalVal] = useState('ALL');
   const sourceRankingsRef = useRef<HTMLDivElement | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_NARRATIVE_TRENDS, {
@@ -27,6 +29,12 @@ export function NarrativeTrends() {
   });
 
   const trends = data?.narrativeTrends;
+
+  useEffect(() => {
+    if (id) {
+      pushCrumb({ label: 'Narrative Trends', path: `/trends/${id}` });
+    }
+  }, [id, pushCrumb]);
 
   return (
     <div className="flex h-full">
@@ -125,6 +133,7 @@ export function NarrativeTrends() {
                 sources={trends?.topSources ?? []}
                 totalArticles={trends?.totalArticles ?? 0}
                 loading={loading}
+                onViewAll={() => sourceRankingsRef.current?.scrollIntoView({ behavior: 'smooth' })}
               />
             </div>
 
