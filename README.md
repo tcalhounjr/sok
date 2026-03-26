@@ -340,6 +340,8 @@ The client starts on `http://localhost:5173`.
 
 The seed script populates Neo4j with a static corpus of articles, sources, authors, and topics, along with sample searches, filter presets, and collections.
 
+> **Note:** All seed articles are synthetic. Headlines, body text, authors, and source URLs are procedurally generated for demonstration purposes. Article URLs follow real domain patterns (e.g. `reuters.com/...`) but do not resolve to live pages — they exist solely to populate the graph with realistic-looking data.
+
 ```bash
 cd server
 npm run seed
