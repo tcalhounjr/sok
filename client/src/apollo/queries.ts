@@ -141,7 +141,7 @@ export const GET_ARTICLE = gql`
 // ---- Narrative Trends (DD-3) ----
 
 export const GET_NARRATIVE_TRENDS = gql`
-  query GetNarrativeTrends($searchId: ID!, $interval: String) {
+  query GetNarrativeTrends($searchId: ID!, $interval: NarrativeInterval) {
     narrativeTrends(searchId: $searchId, interval: $interval) {
       searchId searchName interval totalArticles
       volumeOverTime { date volume positive neutral negative }
