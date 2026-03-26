@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
 import { AlertTriangle, XCircle } from 'lucide-react';
 import { CREATE_SEARCH, UPDATE_SEARCH } from '../apollo/mutations';
@@ -8,6 +8,7 @@ import { useVolumeProjection } from '../hooks/useVolumeProjection';
 import { KeywordTag } from '../components/ui/KeywordTag';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatusDot } from '../components/ui/StatusDot';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 
 const TOPIC_TAXONOMY = [
   { label: 'Technology'   },
@@ -18,8 +19,17 @@ const TOPIC_TAXONOMY = [
 
 export function SearchCreateEdit() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
+  const { setCrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setCrumbs([
+      { label: 'Dashboard', path: '/' },
+      { label: isEdit ? 'Edit Search' : 'New Search', path: location.pathname },
+    ]);
+  }, [setCrumbs, isEdit, location.pathname]);
 
   const [name, setName]           = useState('');
   const [keywords, setKeywords]   = useState<string[]>([]);

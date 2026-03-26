@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { Search, RefreshCw, SlidersHorizontal, Pin, Clock, Library } from 'lucide-react';
 import { GET_SEARCHES, GET_COLLECTIONS } from '../apollo/queries';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { SearchCard } from '../components/search/SearchCard';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatusDot } from '../components/ui/StatusDot';
@@ -15,6 +16,11 @@ type Tab = typeof TABS[number];
 export function SearchLibrary() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('All Queries');
+  const { setCrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setCrumbs([{ label: 'Dashboard', path: '/' }]);
+  }, [setCrumbs]);
 
   const { data: searchData, loading: searchLoading, error: searchError, refetch } = useQuery(GET_SEARCHES);
   const { data: collectionData, error: collectionError } = useQuery(GET_COLLECTIONS);

@@ -8,6 +8,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { Badge } from '../components/ui/Badge';
 import { FilterPresetModal } from '../components/filters/FilterPresetModal';
 import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 
 const TYPE_ICONS: Record<string, string> = {
   SOURCE_TIER: '▤',
@@ -31,6 +32,14 @@ export function FilterPresetLibrary() {
   const [editing, setEditing] = useState<FilterPreset | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const { setCrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setCrumbs([
+      { label: 'Dashboard', path: '/' },
+      { label: 'Preset Library', path: '/presets' },
+    ]);
+  }, [setCrumbs]);
 
   const [deleteFilterPreset] = useMutation(DELETE_FILTER_PRESET, {
     refetchQueries: [{ query: GET_FILTER_PRESETS }],

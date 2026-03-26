@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { GitBranch, Clock, Edit, Eye, TrendingUp, X, Plus } from 'lucide-react';
 import { GET_SEARCH, GET_FILTER_PRESETS } from '../apollo/queries';
 import { REMOVE_FILTER_FROM_SEARCH, APPLY_FILTER_TO_SEARCH } from '../apollo/mutations';
@@ -19,10 +20,11 @@ const PAGE_SIZE = 200;
 export function SearchDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pushCrumb } = useBreadcrumb();
   const [forkOpen, setForkOpen] = useState(false);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [filterPickerOpen, setFilterPickerOpen] = useState(false);
   const filterPickerRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +56,21 @@ export function SearchDetail() {
     if (filterPickerOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [filterPickerOpen]);
+
+  useEffect(() => {
+    const articles = search?.articles ?? [];
+    if (articles.length > 0 && articles.length >= PAGE_SIZE) {
+      setHasMore(true);
+    } else {
+      setHasMore(false);
+    }
+  }, [search?.articles]);
+
+  useEffect(() => {
+    if (search && id) {
+      pushCrumb({ label: search.name, path: `/search/${id}` });
+    }
+  }, [search?.name, id, pushCrumb]);
 
   function handleLoadMore() {
     const nextOffset = offset + PAGE_SIZE;

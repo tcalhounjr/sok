@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { GitBranch, Info, Lock, Plus, X } from 'lucide-react';
+import { GitBranch, Info, Plus, X } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { KeywordTag } from '../ui/KeywordTag';
 import { Badge } from '../ui/Badge';
 import { FORK_SEARCH } from '../../apollo/mutations';
-import { GET_SEARCHES } from '../../apollo/queries';
-import type { Search } from '../../types';
+import { GET_SEARCHES, GET_COLLECTIONS } from '../../apollo/queries';
+import type { Search, Collection } from '../../types';
 
 interface ForkModalProps {
   open: boolean;
@@ -22,9 +22,23 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
   const [parentPickerQuery, setParentPickerQuery] = useState('');
   const [showParentPicker, setShowParentPicker] = useState(false);
 
+  // Keyword override state — initialise from parent on open
+  const [keywords, setKeywords] = useState<string[]>(search.keywords ?? []);
+  const [kwInput, setKwInput] = useState('');
+
+  // Collection picker state
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | undefined>(
+    search.collection?.id
+  );
+
   useEffect(() => {
-    if (open) setName(`${search.name} (Derivative)`);
-  }, [open, search.id, search.name]);
+    if (open) {
+      setName(`${search.name} (Derivative)`);
+      setKeywords(search.keywords ?? []);
+      setSelectedCollectionId(search.collection?.id);
+      setKwInput('');
+    }
+  }, [open, search.id, search.name, search.keywords, search.collection?.id]);
 
   // Reset additional parents when modal closes
   useEffect(() => {
@@ -38,6 +52,9 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
   const { data: searchesData } = useQuery(GET_SEARCHES, {
     skip: !showParentPicker,
   });
+
+  const { data: collectionsData } = useQuery(GET_COLLECTIONS, { skip: !open });
+  const allCollections: Collection[] = collectionsData?.collections ?? [];
 
   const allSearches: Search[] = searchesData?.searches ?? [];
 
@@ -70,7 +87,8 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
         input: {
           parentIds: [search.id, ...additionalParentIds],
           name,
-          collectionId: search.collection?.id,
+          keywords,
+          collectionId: selectedCollectionId ?? undefined,
         },
       },
     });
@@ -84,6 +102,25 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
 
   function removeParent(id: string) {
     setAdditionalParentIds(prev => prev.filter(p => p !== id));
+  }
+
+  function addKeyword(raw: string) {
+    const kw = raw.trim().replace(/,+$/, '').trim();
+    if (kw && !keywords.includes(kw)) {
+      setKeywords(prev => [...prev, kw]);
+    }
+    setKwInput('');
+  }
+
+  function handleKwKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addKeyword(kwInput);
+    }
+  }
+
+  function removeKeyword(kw: string) {
+    setKeywords(prev => prev.filter(k => k !== kw));
   }
 
   return (
@@ -199,45 +236,69 @@ export function ForkModal({ open, onClose, search }: ForkModalProps) {
           />
         </div>
 
-        {/* Inherited logic */}
-        <div className="p-4 bg-surface_container rounded-sm ghost-border">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <GitBranch size={13} className="text-on_surface_variant" />
-              <p className="overline text-on_surface_variant">INHERITED INTELLIGENCE LOGIC</p>
+        {/* Keyword override */}
+        <div>
+          <p className="overline text-on_surface_variant mb-2">KEYWORDS &amp; TOKENS</p>
+          <div className="p-3 bg-surface_container rounded-sm ghost-border">
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {keywords.map(kw => (
+                <KeywordTag
+                  key={kw}
+                  label={kw}
+                  mono
+                  onRemove={() => removeKeyword(kw)}
+                />
+              ))}
+              {keywords.length === 0 && (
+                <span className="text-label-sm text-on_surface_variant font-body italic">
+                  No keywords — add one below.
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-1.5">
-              <Lock size={10} className="text-on_surface_variant" />
-              <span className="text-label-sm text-on_surface_variant font-body italic">
-                Configuration Locked (Read-only)
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="overline text-on_surface_variant mb-2">KEYWORDS &amp; TOKENS</p>
-              <div className="flex flex-wrap gap-1.5">
-                {search.keywords.map(kw => (
-                  <KeywordTag key={kw} label={kw} mono />
-                ))}
-              </div>
-            </div>
-            {search.filters && search.filters.length > 0 && (
-              <div>
-                <p className="overline text-on_surface_variant mb-2">ACTIVE CONSTRAINTS</p>
-                <div className="space-y-1.5">
-                  {search.filters.map(f => (
-                    <div key={f.id} className="flex items-center justify-between">
-                      <span className="text-body-sm text-on_surface_variant font-body">{f.type}</span>
-                      <Badge variant="default">{f.value}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <input
+              value={kwInput}
+              onChange={e => setKwInput(e.target.value)}
+              onKeyDown={handleKwKeyDown}
+              placeholder="Type keyword + Enter or comma to add..."
+              className="w-full px-2 py-1.5 bg-surface_container_high rounded-sm text-body-sm text-on_surface placeholder:text-on_surface_variant ghost-border focus:outline-none"
+            />
           </div>
         </div>
+
+        {/* Collection picker */}
+        <div>
+          <label className="overline text-on_surface_variant mb-1.5 block">
+            COLLECTION
+          </label>
+          <select
+            value={selectedCollectionId ?? ''}
+            onChange={e => setSelectedCollectionId(e.target.value || undefined)}
+            className="w-full px-3 py-2.5 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none appearance-none"
+          >
+            <option value="">None</option>
+            {allCollections.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Active constraints (read-only) */}
+        {search.filters && search.filters.length > 0 && (
+          <div className="p-4 bg-surface_container rounded-sm ghost-border">
+            <div className="flex items-center gap-2 mb-3">
+              <GitBranch size={13} className="text-on_surface_variant" />
+              <p className="overline text-on_surface_variant">INHERITED CONSTRAINTS</p>
+            </div>
+            <div className="space-y-1.5">
+              {search.filters.map(f => (
+                <div key={f.id} className="flex items-center justify-between">
+                  <span className="text-body-sm text-on_surface_variant font-body">{f.type}</span>
+                  <Badge variant="default">{f.value}</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Isolation notice */}
         <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-sm ghost-border">

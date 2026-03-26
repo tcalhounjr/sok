@@ -1,5 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useEffect } from 'react';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { ArrowLeft, Globe, Layers, BarChart2 } from 'lucide-react';
 import { GET_SOURCE, GET_SOURCE_ARTICLES } from '../apollo/queries';
 import { Badge } from '../components/ui/Badge';
@@ -24,6 +26,7 @@ function sentimentVariant(s: string): 'positive' | 'negative' | 'neutral' {
 export function SourceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pushCrumb } = useBreadcrumb();
 
   const { data: sourceData, loading: sourceLoading, error: sourceError, refetch: refetchSource } =
     useQuery(GET_SOURCE, { variables: { id }, skip: !id });
@@ -36,6 +39,12 @@ export function SourceDetail() {
 
   const source = sourceData?.source;
   const articles: any[] = articlesData?.sourceArticles ?? [];
+
+  useEffect(() => {
+    if (source && id) {
+      pushCrumb({ label: source.name, path: `/source/${id}` });
+    }
+  }, [source?.name, id, pushCrumb]);
 
   // Compute sentiment breakdown from fetched articles
   const total = articles.length;
