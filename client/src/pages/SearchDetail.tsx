@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { GitBranch, Clock, Edit, Eye, TrendingUp, X } from 'lucide-react';
-import { GET_SEARCH } from '../apollo/queries';
-import { REMOVE_FILTER_FROM_SEARCH } from '../apollo/mutations';
+import { GitBranch, Clock, Edit, Eye, TrendingUp, X, Plus } from 'lucide-react';
+import { GET_SEARCH, GET_FILTER_PRESETS } from '../apollo/queries';
+import { REMOVE_FILTER_FROM_SEARCH, APPLY_FILTER_TO_SEARCH } from '../apollo/mutations';
 import { KeywordTag } from '../components/ui/KeywordTag';
 import { StatusDot } from '../components/ui/StatusDot';
 import { Badge } from '../components/ui/Badge';
@@ -23,6 +23,8 @@ export function SearchDetail() {
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [filterPickerOpen, setFilterPickerOpen] = useState(false);
+  const filterPickerRef = useRef<HTMLDivElement>(null);
 
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_SEARCH, {
     variables: { id, offset: 0 },
@@ -32,6 +34,26 @@ export function SearchDetail() {
   const [removeFilter] = useMutation(REMOVE_FILTER_FROM_SEARCH, {
     refetchQueries: [{ query: GET_SEARCH, variables: { id, offset: 0 } }],
   });
+
+  const [applyFilter] = useMutation(APPLY_FILTER_TO_SEARCH, {
+    refetchQueries: [{ query: GET_SEARCH, variables: { id, offset: 0 } }],
+    onCompleted: () => setFilterPickerOpen(false),
+  });
+
+  const { data: presetsData } = useQuery(GET_FILTER_PRESETS);
+  const allPresets: FilterPreset[] = presetsData?.filterPresets ?? [];
+  const appliedIds = new Set((search?.filters ?? []).map((f: FilterPreset) => f.id));
+  const availablePresets = allPresets.filter(p => !appliedIds.has(p.id));
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filterPickerRef.current && !filterPickerRef.current.contains(e.target as Node)) {
+        setFilterPickerOpen(false);
+      }
+    }
+    if (filterPickerOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [filterPickerOpen]);
 
   function handleLoadMore() {
     const nextOffset = offset + PAGE_SIZE;
@@ -169,9 +191,35 @@ export function SearchDetail() {
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="overline text-on_surface_variant">REFINEMENT PRESETS</p>
-                  <div className="flex gap-2">
-                    <button className="btn-secondary text-xs py-1">Save Preset</button>
-                    <button className="btn-secondary text-xs py-1">Import</button>
+                  <div className="relative" ref={filterPickerRef}>
+                    <button
+                      onClick={() => setFilterPickerOpen(o => !o)}
+                      className="btn-secondary text-xs py-1 flex items-center gap-1"
+                    >
+                      <Plus size={10} /> Apply Filter
+                    </button>
+                    {filterPickerOpen && (
+                      <div className="absolute right-0 top-full mt-1 w-56 bg-surface_container_high rounded-sm ghost-border shadow-ambient z-10">
+                        {availablePresets.length === 0 ? (
+                          <p className="text-body-sm text-on_surface_variant font-body p-3">
+                            No presets available. Create one in the Preset Library.
+                          </p>
+                        ) : (
+                          <div className="py-1 max-h-48 overflow-y-auto">
+                            {availablePresets.map(p => (
+                              <button
+                                key={p.id}
+                                onClick={() => applyFilter({ variables: { filterId: p.id, searchId: id } })}
+                                className="w-full text-left px-3 py-2 hover:bg-surface_container transition-colors"
+                              >
+                                <p className="overline text-on_tertiary_container">{p.type}</p>
+                                <p className="text-body-sm text-on_surface font-body truncate">{p.name}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 {search.filters && search.filters.length > 0 ? (
