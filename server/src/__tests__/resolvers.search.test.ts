@@ -199,18 +199,21 @@ describe('searchQueries.searchLineage', () => {
     expect(result.nodes.some(n => n.search.id === 'root-search')).toBe(true);
   });
 
-  it('should assign negative depth to descendant nodes', async () => {
+  it('should assign absolute depth 1 to a direct descendant of the focal root node', async () => {
+    // Under SOK-83 absolute depth semantics: root = 0, each generation below increments by 1.
+    // selfNode is the root (no ancestor above it), so its absolute depth is 0.
+    // childNode is 1 level below focal, so its absolute depth is 1.
     const selfNode  = makeNode({ ...SEARCH_PROPS, id: 'search-1' });
     const childNode = makeNode({ ...SEARCH_PROPS, id: 'child-search' });
 
-    mockRunQuery.mockResolvedValueOnce([makeRecord({ ancestor: selfNode, depth: makeInt(0) })]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ ancestor: selfNode, depth: makeInt(0), isRoot: true })]);
     mockRunQuery.mockResolvedValueOnce([makeRecord({ descendant: childNode, depth: makeInt(1) })]);
     mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
 
     const result = await searchQueries.searchLineage(null, { id: 'search-1' }, CTX);
 
     const childLineageNode = result.nodes.find(n => n.search.id === 'child-search');
-    expect(childLineageNode?.depth).toBe(-1);
+    expect(childLineageNode?.depth).toBe(1);
   });
 
   it('should report orphan count accurately when orphaned relationships exist', async () => {
@@ -233,6 +236,122 @@ describe('searchQueries.searchLineage', () => {
     expect(result.totalNodes).toBe(0);
     expect(result.root).toBeNull();
     expect(result.maxDepth).toBe(0);
+  });
+});
+
+// ===========================================================================
+// SOK-83 — searchLineage: absolute depth semantics
+// ===========================================================================
+
+describe('searchQueries.searchLineage — SOK-83 absolute depth', () => {
+  it('should return depth 0 for the root node when focal node is at depth 2 from root', async () => {
+    // Ancestor query returns: focal node at depth 0 from itself, then 2 ancestors above it.
+    // The implementation maps ancestor depth N → absolute depth N from focal.
+    // Root is at ancestor depth 2 → it should get absolute depth 0 (since 2 hops above = root).
+    const rootNode  = makeNode({ ...SEARCH_PROPS, id: 'root-search'  });
+    const midNode   = makeNode({ ...SEARCH_PROPS, id: 'mid-search'   });
+    const focalNode = makeNode({ ...SEARCH_PROPS, id: 'focal-search' });
+
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ ancestor: focalNode, depth: makeInt(0), isRoot: false }),
+      makeRecord({ ancestor: midNode,   depth: makeInt(1), isRoot: false }),
+      makeRecord({ ancestor: rootNode,  depth: makeInt(2), isRoot: true  }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([]); // no descendants
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'focal-search' }, CTX);
+
+    const rootLineageNode = result.nodes.find(n => n.search.id === 'root-search');
+    expect(rootLineageNode).toBeDefined();
+    // The root node (isRoot: true or at max ancestor depth) must have absolute depth 0
+    expect(rootLineageNode!.depth).toBe(0);
+  });
+
+  it('should return depth 0 for the focal node when it is the root (no ancestors above)', async () => {
+    const focalNode = makeNode({ ...SEARCH_PROPS, id: 'focal-search' });
+
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ ancestor: focalNode, depth: makeInt(0), isRoot: true }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([]); // no descendants
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'focal-search' }, CTX);
+
+    const focalLineageNode = result.nodes.find(n => n.search.id === 'focal-search');
+    expect(focalLineageNode).toBeDefined();
+    expect(focalLineageNode!.depth).toBe(0);
+  });
+
+  it('should assign absolute depth 2 to the focal node when it is at depth 2 from root', async () => {
+    // When the ancestor query returns 3 records (self + 2 ancestors), the max ancestor
+    // depth is 2 meaning root is 2 hops above focal. The focal node ancestor depth is 0
+    // → absolute depth = maxAncestorDepth - selfAncestorDepth = 2 - 0 = 2.
+    const rootNode  = makeNode({ ...SEARCH_PROPS, id: 'root-search'  });
+    const midNode   = makeNode({ ...SEARCH_PROPS, id: 'mid-search'   });
+    const focalNode = makeNode({ ...SEARCH_PROPS, id: 'focal-search' });
+
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ ancestor: focalNode, depth: makeInt(0), isRoot: false }),
+      makeRecord({ ancestor: midNode,   depth: makeInt(1), isRoot: false }),
+      makeRecord({ ancestor: rootNode,  depth: makeInt(2), isRoot: true  }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([]); // no descendants
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'focal-search' }, CTX);
+
+    const focalLineageNode = result.nodes.find(n => n.search.id === 'focal-search');
+    expect(focalLineageNode).toBeDefined();
+    expect(focalLineageNode!.depth).toBe(2);
+  });
+
+  it('should assign depth 3 to a descendant 1 level below the focal node when focal is at absolute depth 2', async () => {
+    // Focal at depth 2 from root, descendant 1 below focal → absolute depth 3.
+    // Ancestor query depth 0 = focal, depth 2 = root.
+    // Descendant query depth 1 = the child.
+    const rootNode  = makeNode({ ...SEARCH_PROPS, id: 'root-search'  });
+    const midNode   = makeNode({ ...SEARCH_PROPS, id: 'mid-search'   });
+    const focalNode = makeNode({ ...SEARCH_PROPS, id: 'focal-search' });
+    const childNode = makeNode({ ...SEARCH_PROPS, id: 'child-search' });
+
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ ancestor: focalNode, depth: makeInt(0), isRoot: false }),
+      makeRecord({ ancestor: midNode,   depth: makeInt(1), isRoot: false }),
+      makeRecord({ ancestor: rootNode,  depth: makeInt(2), isRoot: true  }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ descendant: childNode, depth: makeInt(1) }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'focal-search' }, CTX);
+
+    const childLineageNode = result.nodes.find(n => n.search.id === 'child-search');
+    expect(childLineageNode).toBeDefined();
+    // absolute depth of focal (2) + descendant depth relative to focal (1) = 3
+    expect(childLineageNode!.depth).toBe(3);
+  });
+
+  it('should always set depth 0 for the node where isRoot is true in the returned nodes', async () => {
+    const rootNode  = makeNode({ ...SEARCH_PROPS, id: 'root-search'  });
+    const focalNode = makeNode({ ...SEARCH_PROPS, id: 'focal-search' });
+
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ ancestor: focalNode, depth: makeInt(0), isRoot: false }),
+      makeRecord({ ancestor: rootNode,  depth: makeInt(1), isRoot: true  }),
+    ]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ c: makeInt(0) })]);
+
+    const result = await searchQueries.searchLineage(null, { id: 'focal-search' }, CTX);
+
+    const rootLineageNodes = result.nodes.filter(n => n.isRoot === true);
+    expect(rootLineageNodes.length).toBeGreaterThanOrEqual(1);
+    rootLineageNodes.forEach(n => {
+      expect(n.depth).toBe(0);
+    });
   });
 });
 
@@ -409,7 +528,8 @@ describe('searchMutations.forkSearch', () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
     // 3. CREATE forked search
     mockRunQuery.mockResolvedValueOnce([]);
-    // 4. DERIVED_FROM → driver.session().executeWrite() — NOT a runQuery call
+    // 4. DERIVED_FROM runQuery for parent-1 (one call per parent in loop)
+    mockRunQuery.mockResolvedValueOnce([]);
     // 5. MERGE inherited filter presets
     mockRunQuery.mockResolvedValueOnce([]);
     // 6. buildMatchEdges: no articles
@@ -437,7 +557,8 @@ describe('searchMutations.forkSearch', () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
     // 3. CREATE
     mockRunQuery.mockResolvedValueOnce([]);
-    // 4. DERIVED_FROM → driver.session().executeWrite() — NOT a runQuery call
+    // 4. DERIVED_FROM runQuery for parent-1 (one call per parent in loop)
+    mockRunQuery.mockResolvedValueOnce([]);
     // 5. inherit filters
     mockRunQuery.mockResolvedValueOnce([]);
     // 6. buildMatchEdges
@@ -465,12 +586,15 @@ describe('searchMutations.forkSearch', () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: p1 }), makeRecord({ s: p2 })]);
     // 3. CREATE
     mockRunQuery.mockResolvedValueOnce([]);
-    // 4. DERIVED_FROM — driver.session().executeWrite() UNWIND batch, NOT runQuery
-    // 5. inherit filters
+    // 4. DERIVED_FROM runQuery for parent-1 (one call per parent in loop)
     mockRunQuery.mockResolvedValueOnce([]);
-    // 6. buildMatchEdges
+    // 5. DERIVED_FROM runQuery for parent-2
     mockRunQuery.mockResolvedValueOnce([]);
-    // 7. final MATCH
+    // 6. inherit filters
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 7. buildMatchEdges
+    mockRunQuery.mockResolvedValueOnce([]);
+    // 8. final MATCH
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: makeNode(SEARCH_PROPS) })]);
 
     await searchMutations.forkSearch(
@@ -479,15 +603,13 @@ describe('searchMutations.forkSearch', () => {
       CTX,
     );
 
-    // DERIVED_FROM is now written via driver.session().executeWrite() in a single UNWIND batch
-    expect(mockExecuteWrite).toHaveBeenCalledOnce();
-    const txFn = mockExecuteWrite.mock.calls[0][0];
-    const fakeTx = { run: vi.fn().mockResolvedValue({ records: [] }) };
-    await txFn(fakeTx);
-    const derivedCypher = fakeTx.run.mock.calls[0][0] as string;
-    expect(derivedCypher).toContain('DERIVED_FROM');
-    const derivedParams = fakeTx.run.mock.calls[0][1] as any;
-    expect(derivedParams.parentIds).toEqual(expect.arrayContaining(['parent-1', 'parent-2']));
+    // DERIVED_FROM is written via individual runQuery calls per parent
+    const derivedFromCalls = mockRunQuery.mock.calls.filter(
+      (c: any[]) => (c[1] as string).includes('DERIVED_FROM'),
+    );
+    expect(derivedFromCalls).toHaveLength(2);
+    const parentIdsUsed = derivedFromCalls.map((c: any[]) => (c[2] as any).parentId);
+    expect(parentIdsUsed).toEqual(expect.arrayContaining(['parent-1', 'parent-2']));
   });
 
   it('should link the forked search to a collection when collectionId is provided', async () => {
@@ -500,7 +622,8 @@ describe('searchMutations.forkSearch', () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ s: parentNode })]);
     // 3. CREATE forked search
     mockRunQuery.mockResolvedValueOnce([]);
-    // 4. DERIVED_FROM — driver.session().executeWrite() UNWIND batch, NOT runQuery
+    // 4. DERIVED_FROM runQuery for parent-1 (one call per parent in loop)
+    mockRunQuery.mockResolvedValueOnce([]);
     // 5. MERGE inherited filter presets
     mockRunQuery.mockResolvedValueOnce([]);
     // 6. MERGE collection CONTAINS — triggered by collectionId
@@ -683,7 +806,7 @@ describe('searchFieldResolvers.articles', () => {
     await searchFieldResolvers.articles(SEARCH_PROPS as any, { offset: 20 }, CTX);
 
     const [, cypher, params] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('SKIP $offset');
+    expect(cypher).toContain('SKIP toInteger($offset)');
     expect(params).toMatchObject({ offset: 20 });
   });
 
@@ -803,7 +926,7 @@ describe('searchFieldResolvers.articles', () => {
 
     const [, cypher, params] = mockRunQuery.mock.calls[1];
     expect(cypher).toContain('LIMIT 200');
-    expect(cypher).toContain('SKIP $offset');
+    expect(cypher).toContain('SKIP toInteger($offset)');
     expect(params).toMatchObject({ offset: 0 });
   });
 
@@ -814,7 +937,7 @@ describe('searchFieldResolvers.articles', () => {
     await searchFieldResolvers.articles(SEARCH_PROPS as any, { offset: 200 }, CTX);
 
     const [, cypher, params] = mockRunQuery.mock.calls[1];
-    expect(cypher).toContain('SKIP $offset');
+    expect(cypher).toContain('SKIP toInteger($offset)');
     expect(params).toMatchObject({ offset: 200 });
   });
 });

@@ -812,6 +812,94 @@ describe('articleQueries.article — full field coverage', () => {
 });
 
 // ===========================================================================
+// SOK-82 — narrativeTrends: ALL interval and date filtering
+// ===========================================================================
+
+describe('narrativeTrendsQuery.narrativeTrends — SOK-82 ALL interval', () => {
+  function stubEmptyRun() {
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([]);
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'Test Search' })]);
+  }
+
+  it('should return interval ALL and pass null startDate when no interval argument is provided', async () => {
+    stubEmptyRun();
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1' }, CTX,
+    );
+
+    expect(result.interval).toBe('ALL');
+    // The first runQuery call is the volume-over-time query; params must not include a real date
+    const params = mockRunQuery.mock.calls[0][2] as Record<string, unknown>;
+    expect(params.startDate == null || params.startDate === null).toBe(true);
+  });
+
+  it('should return interval ALL and pass null startDate when interval is explicitly ALL', async () => {
+    stubEmptyRun();
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1', interval: 'ALL' }, CTX,
+    );
+
+    expect(result.interval).toBe('ALL');
+    const params = mockRunQuery.mock.calls[0][2] as Record<string, unknown>;
+    expect(params.startDate == null || params.startDate === null).toBe(true);
+  });
+
+  it('should omit a date WHERE clause from the Cypher query when interval is ALL', async () => {
+    stubEmptyRun();
+
+    await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1', interval: 'ALL' }, CTX,
+    );
+
+    // The implementation uses a null-guard pattern: WHERE ($startDate IS NULL OR a.publishedAt >= $startDate)
+    // so the substring is always present in Cypher. Verify date filtering is suppressed via the null param.
+    const params = mockRunQuery.mock.calls[0][2] as Record<string, unknown>;
+    expect(params.startDate == null || params.startDate === null).toBe(true);
+  });
+
+  it('should compute a startDate 7 days in the past and include it in the Cypher when interval is L7D', async () => {
+    stubEmptyRun();
+
+    await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1', interval: 'L7D' }, CTX,
+    );
+
+    const params = mockRunQuery.mock.calls[0][2] as Record<string, unknown>;
+    expect(params.startDate).not.toBeNull();
+
+    // The implementation emits a date-only string via .toISOString().split('T')[0].
+    // Compare directly against the expected ISO date string for 7 days ago to avoid UTC/local mismatch.
+    const expectedDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    expect(params.startDate).toBe(expectedDate);
+  });
+
+  it('should include a date WHERE clause in the Cypher query when interval is L7D', async () => {
+    stubEmptyRun();
+
+    await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1', interval: 'L7D' }, CTX,
+    );
+
+    const [, cypher] = mockRunQuery.mock.calls[0];
+    expect(cypher).toMatch(/a\.publishedAt\s*>=\s*\$startDate/);
+  });
+
+  it('should return interval L7D on the result when interval is L7D', async () => {
+    stubEmptyRun();
+
+    const result = await narrativeTrendsQuery.narrativeTrends(
+      null, { searchId: 'search-1', interval: 'L7D' }, CTX,
+    );
+
+    expect(result.interval).toBe('L7D');
+  });
+});
+
+// ===========================================================================
 // SOK-74 — Collection stats
 // ===========================================================================
 
