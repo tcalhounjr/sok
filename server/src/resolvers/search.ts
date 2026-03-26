@@ -123,6 +123,22 @@ export const searchQueries = {
       nodes.push({ search, depth: -depth, isRoot: false });
     }
 
+    // -----------------------------------------------------------------------
+    // SOK-83: Convert relative depths to absolute depth from root.
+    //
+    // Before this step, ancestor depths are positive (distance above focal),
+    // the focal node is 0, and descendant depths are negative.
+    //
+    // After: root = 0, focal = rootDepth, each generation below focal
+    // increments by 1. The frontend groups nodes by ascending depth for
+    // top-to-bottom rendering, which this ordering preserves.
+    // -----------------------------------------------------------------------
+    const rootNode = nodes.find(n => n.isRoot);
+    const rootDepth = rootNode ? rootNode.depth : 0;
+    for (const node of nodes) {
+      node.depth = rootDepth - node.depth;
+    }
+
     return {
       root,
       nodes,
