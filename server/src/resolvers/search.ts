@@ -413,7 +413,7 @@ export const searchFieldResolvers = {
       cypher += ` WHERE ${whereClauses.join(' AND ')}`;
     }
 
-    cypher += ' RETURN a ORDER BY a.publishedAt DESC SKIP $offset LIMIT 200';
+    cypher += ' RETURN a ORDER BY a.publishedAt DESC SKIP toInteger($offset) LIMIT 200';
 
     const records = await runQuery(driver, cypher, params);
     return records.map(r => toObject(r.get('a')));

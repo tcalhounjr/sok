@@ -374,13 +374,13 @@ export const sourceQueries = {
       cypher = `
         MATCH (a:Article)-[:PUBLISHED_BY]->(src:Source {id: $sourceId})
         MATCH (s:Search {id: $searchId})-[:MATCHES]->(a)
-        RETURN a ORDER BY a.publishedAt DESC SKIP $offset LIMIT $limit
+        RETURN a ORDER BY a.publishedAt DESC SKIP toInteger($offset) LIMIT toInteger($limit)
       `;
       params.searchId = searchId;
     } else {
       cypher = `
         MATCH (a:Article)-[:PUBLISHED_BY]->(src:Source {id: $sourceId})
-        RETURN a ORDER BY a.publishedAt DESC SKIP $offset LIMIT $limit
+        RETURN a ORDER BY a.publishedAt DESC SKIP toInteger($offset) LIMIT toInteger($limit)
       `;
     }
 
