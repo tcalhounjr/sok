@@ -29,6 +29,7 @@ vi.mock('@apollo/client', () => ({
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
   useParams:   () => mockUseParams(),
+  useLocation: () => ({ pathname: '/search/create', search: '', hash: '', state: null }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 

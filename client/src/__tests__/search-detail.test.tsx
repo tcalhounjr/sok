@@ -72,6 +72,30 @@ vi.mock('lucide-react', () => ({
   TrendingUp: () => <span />,
   X:          () => <span />,
   Edit:       () => <span />,
+  Plus:       () => <span />,
+}));
+
+// SearchDetail now uses QueryErrorPanel — add mock so the import resolves
+vi.mock('../components/ui/QueryErrorPanel', () => ({
+  QueryErrorPanel: ({ message }: { message: string }) => (
+    <div role="alert">{message}</div>
+  ),
+}));
+
+// SearchDetail now uses ArticleDetailModal — add mock so the import resolves
+vi.mock('../components/articles/ArticleDetailModal', () => ({
+  ArticleDetailModal: ({
+    articleId,
+    onClose,
+  }: {
+    articleId: string | null;
+    onClose: () => void;
+  }) =>
+    articleId ? (
+      <div data-testid="article-detail-modal" data-article-id={articleId}>
+        <button data-testid="modal-close" onClick={onClose}>Close</button>
+      </div>
+    ) : null,
 }));
 
 import { SearchDetail } from '../pages/SearchDetail';

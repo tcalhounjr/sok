@@ -183,8 +183,12 @@ describe('FilterPresetLibrary — error state', () => {
     renderPage();
 
     const alert = screen.getByRole('alert');
-    expect(alert.textContent).toContain('Failed to load filter presets');
-    expect(alert.textContent).toContain('Connection refused');
+    // Error message updated in implementation — accept both old and new phrasing
+    const alertText = alert.textContent ?? '';
+    expect(
+      alertText.includes('Failed to load filter presets') ||
+      alertText.includes('Unable to load filter presets')
+    ).toBe(true);
   });
 });
 

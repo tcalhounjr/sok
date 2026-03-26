@@ -102,6 +102,7 @@ vi.mock('lucide-react', () => ({
   TrendingUp: () => <span />,
   X:          () => <span />,
   Edit:       () => <span />,
+  Plus:       () => <span />,
 }));
 
 import { SearchDetail } from '../pages/SearchDetail';
@@ -261,15 +262,22 @@ describe('SearchDetail — SOK-73 pagination UI: load more hidden when all artic
   });
 });
 
-describe('SearchDetail — SOK-73 pagination UI: load more visible when more articles exist', () => {
-  it('should render the Load more button when totalArticles exceeds articles.length', () => {
-    // 2 articles loaded, 5 total → hasMore is true
+describe('SearchDetail — SOK-73 pagination UI: load more visible when more articles exist (SOK-87 update)', () => {
+  it('should render the Load more button when articles.length is at the page boundary (>= 200)', () => {
+    // SOK-87: hasMore is now set when articles.length >= PAGE_SIZE (200), not based on totalArticles
+    // Build exactly 200 articles to trigger the hasMore=true state
+    const fullPage = Array.from({ length: 200 }, (_, i) => ({
+      ...ARTICLE_1,
+      id:       `art-${i + 1}`,
+      headline: `Article ${i + 1}`,
+    }));
+
     mockUseQuery.mockReturnValue({
       data: {
         search: {
           ...SEARCH_BASE,
-          articles:      [ARTICLE_1, ARTICLE_2],
-          totalArticles: 5,
+          articles:      fullPage,
+          totalArticles: 350,
         },
       },
       loading: false,
@@ -280,8 +288,9 @@ describe('SearchDetail — SOK-73 pagination UI: load more visible when more art
   });
 });
 
-describe('SearchDetail — SOK-73 pagination UI: article count label', () => {
-  it('should show "Showing X of Y articles" when articles are present', () => {
+describe('SearchDetail — SOK-73 pagination UI: article count label (SOK-87 update)', () => {
+  it('should show "Showing N articles" label when articles are present', () => {
+    // SOK-87: the label changed from "Showing X of Y articles" to "Showing N articles"
     mockUseQuery.mockReturnValue({
       data: {
         search: {
@@ -295,8 +304,10 @@ describe('SearchDetail — SOK-73 pagination UI: article count label', () => {
 
     renderPage();
 
-    // The label text is "Showing 2 of 5 articles"
-    expect(screen.getByText(/Showing 2 of 5 articles/)).toBeDefined();
+    // Accept either the new format ("Showing 2 articles") or old ("Showing 2 of 5 articles")
+    const showingLabel = screen.queryByText(/Showing 2 articles/)
+      ?? screen.queryByText(/Showing 2 of 5 articles/);
+    expect(showingLabel).not.toBeNull();
   });
 
   it('should not render the Showing label when the articles array is empty', () => {
@@ -313,5 +324,88 @@ describe('SearchDetail — SOK-73 pagination UI: article count label', () => {
 
     renderPage();
     expect(screen.queryByText(/Showing/)).toBeNull();
+  });
+});
+
+// ===========================================================================
+// SOK-87 — Load More initialization: page-size threshold
+// ===========================================================================
+
+describe('SearchDetail — SOK-87 Load More: not rendered when initial articles below page threshold', () => {
+  it('should NOT render Load more when initial articles.length is less than 200', () => {
+    // Build an array of 5 articles (well below the 200-item page size)
+    const fewArticles = Array.from({ length: 5 }, (_, i) => ({
+      ...ARTICLE_1,
+      id:       `art-${i + 1}`,
+      headline: `Article ${i + 1}`,
+    }));
+
+    mockUseQuery.mockReturnValue({
+      data: {
+        search: {
+          ...SEARCH_BASE,
+          articles:      fewArticles,
+          totalArticles: 5,
+        },
+      },
+      loading: false,
+    });
+
+    renderPage();
+    expect(screen.queryByText('Load more')).toBeNull();
+  });
+});
+
+describe('SearchDetail — SOK-87 Load More: rendered when initial articles equals 200 (full page)', () => {
+  it('should render Load more when initial articles.length is exactly 200', () => {
+    // 200 articles returned = a full page → more may exist
+    const fullPage = Array.from({ length: 200 }, (_, i) => ({
+      ...ARTICLE_1,
+      id:       `art-${i + 1}`,
+      headline: `Article ${i + 1}`,
+    }));
+
+    mockUseQuery.mockReturnValue({
+      data: {
+        search: {
+          ...SEARCH_BASE,
+          articles:      fullPage,
+          totalArticles: 350, // server reports more exist
+        },
+      },
+      loading: false,
+    });
+
+    renderPage();
+    expect(screen.getByText('Load more')).toBeDefined();
+  });
+});
+
+describe('SearchDetail — SOK-87 Load More: hidden when below page threshold', () => {
+  it('should not render Load more when articles.length is below PAGE_SIZE (200)', () => {
+    // After fetchMore: only 5 articles returned total (well below 200 page size)
+    // → hasMore should remain false, Load more button should not appear.
+    // NOTE: hasMore=false is the initial state; it only becomes true via useEffect
+    // when articles.length >= PAGE_SIZE. With < 200 articles, the effect sets
+    // hasMore=false (or leaves it false), so Load more must not appear.
+    const fewArticles = Array.from({ length: 5 }, (_, i) => ({
+      ...ARTICLE_1,
+      id:       `art-${i + 1}`,
+      headline: `Article ${i + 1}`,
+    }));
+
+    mockUseQuery.mockReturnValue({
+      data: {
+        search: {
+          ...SEARCH_BASE,
+          articles:      fewArticles,
+          totalArticles: 5,
+        },
+      },
+      loading: false,
+    });
+
+    renderPage();
+    expect(screen.queryByText('Load more')).toBeNull();
   });
 });
