@@ -31,6 +31,7 @@ import {
   topicFieldResolvers,
   narrativeTrendsQuery,
   volumeProjectionQuery,
+  sourceQueries,
 } from '../resolvers/others.js';
 
 // ---------------------------------------------------------------------------
@@ -667,7 +668,7 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
     expect(result.topTopics).toEqual([]);
   });
 
-  it('should use the default interval value of day when none is supplied', async () => {
+  it('should return ALL as interval when none is supplied', async () => {
     mockRunQuery.mockResolvedValueOnce([]);
     mockRunQuery.mockResolvedValueOnce([]);
     mockRunQuery.mockResolvedValueOnce([]);
@@ -677,7 +678,7 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
       null, { searchId: 'search-1' }, CTX,
     );
 
-    expect(result.interval).toBe('day');
+    expect(result.interval).toBe('ALL');
   });
 
   it('should propagate custom interval value when one is provided', async () => {
@@ -687,10 +688,10 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
     mockRunQuery.mockResolvedValueOnce([makeRecord({ name: 'S' })]);
 
     const result = await narrativeTrendsQuery.narrativeTrends(
-      null, { searchId: 'search-1', interval: 'week' }, CTX,
+      null, { searchId: 'search-1', interval: 'L30D' }, CTX,
     );
 
-    expect(result.interval).toBe('week');
+    expect(result.interval).toBe('L30D');
   });
 
   it('should fall back to searchId as name when no search record is returned', async () => {
@@ -704,5 +705,197 @@ describe('narrativeTrendsQuery.narrativeTrends', () => {
     );
 
     expect(result.searchName).toBe('search-fallback');
+  });
+});
+
+// ===========================================================================
+// SOK-70 — Source Queries
+// ===========================================================================
+
+describe('sourceQueries.source', () => {
+  it('should return a source node with name, tier, region, and language when found', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ src: makeNode(SRC_PROPS) })]);
+
+    const result = await sourceQueries.source(null, { id: 'src-1' }, CTX);
+
+    expect(result).toMatchObject({
+      id:       'src-1',
+      name:     'Reuters',
+      tier:     1,
+      region:   'GLOBAL',
+      language: 'en',
+    });
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (src:Source {id: $id})');
+    expect(params).toEqual({ id: 'src-1' });
+  });
+
+  it('should return null when no source node exists for the given id', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await sourceQueries.source(null, { id: 'ghost-src' }, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+describe('sourceQueries.sourceArticles', () => {
+  it('should return articles published by the given source ordered by publishedAt desc', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ a: makeNode({ ...ART_PROPS, id: 'art-1' }) }),
+      makeRecord({ a: makeNode({ ...ART_PROPS, id: 'art-2', publishedAt: '2025-05-01' }) }),
+    ]);
+
+    const result = await sourceQueries.sourceArticles(null, { sourceId: 'src-1' }, CTX);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({ id: 'art-1' });
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (a:Article)-[:PUBLISHED_BY]->(src:Source {id: $sourceId})');
+    expect(params).toMatchObject({ sourceId: 'src-1' });
+  });
+
+  it('should return an empty array when no articles are published by the given source', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await sourceQueries.sourceArticles(null, { sourceId: 'src-empty' }, CTX);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should scope to articles matching both source and search when searchId is provided', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({ a: makeNode({ ...ART_PROPS, id: 'art-filtered' }) }),
+    ]);
+
+    const result = await sourceQueries.sourceArticles(
+      null,
+      { sourceId: 'src-1', searchId: 'search-1' },
+      CTX,
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ id: 'art-filtered' });
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (s:Search {id: $searchId})-[:MATCHES]->(a)');
+    expect(params).toMatchObject({ sourceId: 'src-1', searchId: 'search-1' });
+  });
+});
+
+// ===========================================================================
+// SOK-72 — Article query (additional coverage)
+// ===========================================================================
+
+describe('articleQueries.article — full field coverage', () => {
+  it('should return the full article including body when the article exists', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ a: makeNode(ART_PROPS) })]);
+
+    const result = await articleQueries.article(null, { id: 'art-1' }, CTX);
+
+    expect(result).toMatchObject({
+      id:          'art-1',
+      headline:    'Big Story',
+      body:        'full text',
+      url:         'https://x',
+      publishedAt: '2025-06-01',
+      sentiment:   'NEUTRAL',
+    });
+  });
+
+  it('should return null when no article exists for the given id', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await articleQueries.article(null, { id: 'nonexistent-art' }, CTX);
+
+    expect(result).toBeNull();
+  });
+});
+
+// ===========================================================================
+// SOK-74 — Collection stats
+// ===========================================================================
+
+describe('collectionFieldResolvers.totalArticles', () => {
+  it('should return the total distinct article count across all member searches', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ total: makeInt(42) })]);
+
+    const result = await collectionFieldResolvers.totalArticles(COL_PROPS as any, null, CTX);
+
+    expect(result).toBe(42);
+    const [, cypher, params] = mockRunQuery.mock.calls[0];
+    expect(cypher).toContain('MATCH (c:Collection {id: $id})-[:CONTAINS]->(s:Search)-[:MATCHES]->(a:Article)');
+    expect(cypher).toContain('count(DISTINCT a) AS total');
+    expect(params).toMatchObject({ id: 'col-1' });
+  });
+
+  it('should return 0 when the collection contains no article matches', async () => {
+    mockRunQuery.mockResolvedValueOnce([makeRecord({ total: makeInt(0) })]);
+
+    const result = await collectionFieldResolvers.totalArticles(COL_PROPS as any, null, CTX);
+
+    expect(result).toBe(0);
+  });
+
+  it('should return 0 when the count query returns an empty result set', async () => {
+    // nullish-coalescing fallback for missing record
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await collectionFieldResolvers.totalArticles(COL_PROPS as any, null, CTX);
+
+    expect(result).toBe(0);
+  });
+});
+
+describe('collectionFieldResolvers.sentimentSummary', () => {
+  it('should return correct counts and percentages for a collection with mixed sentiment', async () => {
+    // 4 positive, 4 neutral, 2 negative → total 10
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({
+        total:    makeInt(10),
+        positive: makeInt(4),
+        neutral:  makeInt(4),
+        negative: makeInt(2),
+      }),
+    ]);
+
+    const result = await collectionFieldResolvers.sentimentSummary(COL_PROPS as any, null, CTX);
+
+    expect(result).toMatchObject({
+      total:    10,
+      positive: 4,
+      neutral:  4,
+      negative: 2,
+    });
+    expect(result!.positivePercent).toBe(40);
+    expect(result!.neutralPercent).toBe(40);
+    expect(result!.negativePercent).toBe(20);
+    expect(result!.periodShift).toBeNull();
+  });
+
+  it('should return null when the collection has no articles', async () => {
+    mockRunQuery.mockResolvedValueOnce([]);
+
+    const result = await collectionFieldResolvers.sentimentSummary(COL_PROPS as any, null, CTX);
+
+    expect(result).toBeNull();
+  });
+
+  it('should return zero percents when total is 0 to avoid division by zero', async () => {
+    mockRunQuery.mockResolvedValueOnce([
+      makeRecord({
+        total:    makeInt(0),
+        positive: makeInt(0),
+        neutral:  makeInt(0),
+        negative: makeInt(0),
+      }),
+    ]);
+
+    const result = await collectionFieldResolvers.sentimentSummary(COL_PROPS as any, null, CTX);
+
+    expect(result).toMatchObject({
+      positivePercent: 0,
+      neutralPercent:  0,
+      negativePercent: 0,
+    });
   });
 });

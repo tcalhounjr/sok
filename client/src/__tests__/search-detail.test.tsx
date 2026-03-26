@@ -71,6 +71,7 @@ vi.mock('lucide-react', () => ({
   Eye:        () => <span />,
   TrendingUp: () => <span />,
   X:          () => <span />,
+  Edit:       () => <span />,
 }));
 
 import { SearchDetail } from '../pages/SearchDetail';
@@ -279,9 +280,9 @@ describe('SearchDetail — navigation', () => {
     mockUseQuery.mockReturnValue({ data: { search: SEARCH_FIXTURE }, loading: false });
   });
 
-  it('should navigate to the lineage page when Version History is clicked', async () => {
+  it('should navigate to the lineage page when View Lineage is clicked', async () => {
     renderPage();
-    await userEvent.click(screen.getByText('Version History'));
+    await userEvent.click(screen.getByText('View Lineage'));
     expect(mockNavigate).toHaveBeenCalledWith('/lineage/search-1');
   });
 

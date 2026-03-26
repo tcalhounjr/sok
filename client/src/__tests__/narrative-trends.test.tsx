@@ -15,9 +15,10 @@ import React from 'react';
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockUseQuery, mockUseParams } = vi.hoisted(() => ({
-  mockUseQuery:  vi.fn(),
-  mockUseParams: vi.fn(),
+const { mockUseQuery, mockUseParams, mockNavigate } = vi.hoisted(() => ({
+  mockUseQuery:   vi.fn(),
+  mockUseParams:  vi.fn(),
+  mockNavigate:   vi.fn(),
 }));
 
 vi.mock('@apollo/client', () => ({
@@ -26,7 +27,8 @@ vi.mock('@apollo/client', () => ({
 }));
 
 vi.mock('react-router-dom', () => ({
-  useParams: () => mockUseParams(),
+  useParams:   () => mockUseParams(),
+  useNavigate: () => mockNavigate,
 }));
 
 vi.mock('../components/ui/Skeleton', () => ({
@@ -110,6 +112,7 @@ const TRENDS_FIXTURE = {
 
 beforeEach(() => {
   mockUseQuery.mockReset();
+  mockNavigate.mockReset();
   mockUseParams.mockReturnValue({ id: 'search-1' });
 });
 
@@ -263,25 +266,25 @@ describe('NarrativeTrends — interval switching', () => {
 });
 
 // ===========================================================================
-// View toggle (current / parent)
+// Interval controls (L7D / L30D / L90D) — replaces the removed view toggle
 // ===========================================================================
 
-describe('NarrativeTrends — view toggle', () => {
+describe('NarrativeTrends — interval controls', () => {
   beforeEach(() => {
     mockUseQuery.mockReturnValue({ data: { narrativeTrends: TRENDS_FIXTURE }, loading: false });
   });
 
-  it('should render both Current Search and Parent Narrative toggle buttons', () => {
+  it('should render all three interval buttons (L7D, L30D, L90D)', () => {
     renderPage();
-    expect(screen.getByText('Current Search')).toBeDefined();
-    expect(screen.getByText('Parent Narrative')).toBeDefined();
+    expect(screen.getByText('L7D')).toBeDefined();
+    expect(screen.getByText('L30D')).toBeDefined();
+    expect(screen.getByText('L90D')).toBeDefined();
   });
 
-  it('should toggle to Parent Narrative view when the Parent Narrative button is clicked', async () => {
+  it('should keep the L30D button in the DOM after it is clicked without crashing', async () => {
     renderPage();
-    await userEvent.click(screen.getByText('Parent Narrative'));
-    // Verify no crash and the button is still present
-    expect(screen.getByText('Parent Narrative')).toBeDefined();
+    await userEvent.click(screen.getByText('L30D'));
+    expect(screen.getByText('L30D')).toBeDefined();
   });
 });
 
@@ -296,7 +299,6 @@ describe('NarrativeTrends — sidebar navigation', () => {
 
   it('should render the sidebar navigation labels', () => {
     renderPage();
-    expect(screen.getByText('PINNED')).toBeDefined();
     expect(screen.getByText('RECENT')).toBeDefined();
     expect(screen.getByText('LINEAGE')).toBeDefined();
     expect(screen.getByText('SOURCES')).toBeDefined();

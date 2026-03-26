@@ -1,6 +1,7 @@
 import { runQuery, toObject } from '../neo4j/driver.js';
 import { randomUUID } from 'crypto';
 import { Driver, Record as Neo4jRecord } from 'neo4j-driver';
+import { GraphQLError } from 'graphql';
 import {
   ApolloContext, SearchNode,
   DeleteResult, SearchLineage, LineageNode,
@@ -24,12 +25,15 @@ async function buildMatchEdges(driver: Driver, searchId: string, keywords: strin
 // Search Queries
 // ---------------------------------------------------------------------------
 
+const MAX_KEYWORD_LENGTH = 200;
+
 export const searchQueries = {
   search: async (
     _parent: unknown,
     { id }: { id: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<SearchNode | null> => {
+    requireAuth(callerId);
     const records = await runQuery(driver, 'MATCH (s:Search {id: $id}) RETURN s', { id });
     return records.length ? toObject(records[0].get('s')) as SearchNode : null;
   },
@@ -37,8 +41,17 @@ export const searchQueries = {
   searches: async (
     _parent: unknown,
     { collectionId, keyword, status }: { collectionId?: string; keyword?: string; status?: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<SearchNode[]> => {
+    requireAuth(callerId);
+
+    if (keyword !== undefined && keyword.length > MAX_KEYWORD_LENGTH) {
+      throw new GraphQLError(
+        `keyword must not exceed ${MAX_KEYWORD_LENGTH} characters`,
+        { extensions: { code: 'BAD_USER_INPUT' } },
+      );
+    }
+
     let cypher = 'MATCH (s:Search)';
     const params: Record<string, unknown> = {};
     const conditions: string[] = [];
@@ -71,8 +84,9 @@ export const searchQueries = {
   searchLineage: async (
     _parent: unknown,
     { id }: { id: string },
-    { driver }: ApolloContext
+    { driver, callerId }: ApolloContext
   ): Promise<SearchLineage> => {
+    requireAuth(callerId);
     const ancestorRecords = await runQuery(driver, `
       MATCH path = (s:Search {id: $id})-[:DERIVED_FROM*0..15]->(ancestor:Search)
       RETURN ancestor, length(path) AS depth,
@@ -184,6 +198,12 @@ export const searchMutations = {
 
     const records = await runQuery(driver,
       `MATCH (s:Search {id: $id}) SET ${setClauses.join(', ')} RETURN s`, params);
+
+    if (records.length === 0) {
+      throw new GraphQLError(`Search with id '${id}' not found`, {
+        extensions: { code: 'NOT_FOUND' },
+      });
+    }
 
     if (input.keywords !== undefined) {
       await runQuery(driver, 'MATCH (s:Search {id: $id})-[r:MATCHES]->() DELETE r', { id });
@@ -324,10 +344,78 @@ export const searchFieldResolvers = {
     return records.map(r => toObject(r.get('d')));
   },
 
-  articles: async (parent: SearchNode, _args: unknown, { driver }: ApolloContext) => {
-    const records = await runQuery(driver,
-      'MATCH (s:Search {id: $id})-[:MATCHES]->(a:Article) RETURN a ORDER BY a.publishedAt DESC LIMIT 200',
+  articles: async (
+    parent: SearchNode,
+    { offset = 0 }: { offset?: number },
+    { driver }: ApolloContext
+  ) => {
+    // Fetch all FilterPreset nodes attached to this search via HAS_FILTER edges.
+    const filterRecords = await runQuery(driver,
+      'MATCH (s:Search {id: $id})-[:HAS_FILTER]->(f:FilterPreset) RETURN f',
       { id: parent.id });
+
+    const filters = filterRecords.map(r => toObject(r.get('f')) as { type: string; value: string });
+
+    // Base query — join source node so SOURCE_TIER / REGION / LANGUAGE filters can reference it.
+    let cypher = `
+      MATCH (s:Search {id: $id})-[:MATCHES]->(a:Article)
+      MATCH (a)-[:PUBLISHED_BY]->(src:Source)
+    `;
+
+    const whereClauses: string[] = [];
+    const params: Record<string, unknown> = { id: parent.id, offset };
+
+    for (let i = 0; i < filters.length; i++) {
+      const filter = filters[i];
+      switch (filter.type) {
+        case 'SENTIMENT': {
+          const p = `sentimentValue_${i}`;
+          whereClauses.push(`a.sentiment = $${p}`);
+          params[p] = filter.value;
+          break;
+        }
+        case 'SOURCE_TIER': {
+          const p = `tierValue_${i}`;
+          whereClauses.push(`src.tier = toInteger($${p})`);
+          params[p] = filter.value;
+          break;
+        }
+        case 'REGION': {
+          const p = `regionValue_${i}`;
+          whereClauses.push(`src.region = $${p}`);
+          params[p] = filter.value;
+          break;
+        }
+        case 'LANGUAGE': {
+          const p = `languageValue_${i}`;
+          whereClauses.push(`a.language = $${p}`);
+          params[p] = filter.value;
+          break;
+        }
+        case 'DATE_RANGE': {
+          // Value format: "startDate,endDate" (YYYY-MM-DD,YYYY-MM-DD)
+          const parts = filter.value.split(',');
+          if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
+            console.warn('[filter] Skipping malformed DATE_RANGE filter value:', filter.value);
+            break;
+          }
+          const ps = `dateRangeStart_${i}`;
+          const pe = `dateRangeEnd_${i}`;
+          whereClauses.push(`a.publishedAt >= $${ps} AND a.publishedAt <= $${pe}`);
+          params[ps] = parts[0].trim();
+          params[pe] = parts[1].trim();
+          break;
+        }
+      }
+    }
+
+    if (whereClauses.length > 0) {
+      cypher += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
+
+    cypher += ' RETURN a ORDER BY a.publishedAt DESC SKIP $offset LIMIT 200';
+
+    const records = await runQuery(driver, cypher, params);
     return records.map(r => toObject(r.get('a')));
   },
 };

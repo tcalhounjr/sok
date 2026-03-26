@@ -91,8 +91,16 @@ export function CollectionSidebar({
                   <div className="min-w-0">
                     <p className="text-body-sm font-body truncate">{col.name}</p>
                     <p className="text-label-sm text-on_surface_variant font-body">
-                      {col.searches?.length ?? 0} ACTIVE SEARCHES
+                      {col.searches?.length ?? 0} SEARCHES
+                      {col.totalArticles != null && ` · ${col.totalArticles.toLocaleString()} ARTICLES`}
                     </p>
+                    {col.sentimentSummary && (
+                      <div className="flex h-0.5 mt-1 rounded-full overflow-hidden w-full">
+                        <div className="bg-secondary" style={{ width: `${col.sentimentSummary.positivePercent}%` }} />
+                        <div className="bg-tertiary" style={{ width: `${col.sentimentSummary.neutralPercent}%` }} />
+                        <div className="bg-error" style={{ width: `${col.sentimentSummary.negativePercent}%` }} />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <ChevronRight size={12} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />

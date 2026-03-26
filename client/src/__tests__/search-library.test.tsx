@@ -181,8 +181,7 @@ describe('SearchLibrary — error state', () => {
     renderPage();
 
     const alert = screen.getByRole('alert');
-    expect(alert.textContent).toContain('Failed to load searches');
-    expect(alert.textContent).toContain('Network error');
+    expect(alert.textContent).toContain('Unable to load your searches');
   });
 
   it('should render a collection error alert in the sidebar when collections query fails', () => {

@@ -7,7 +7,7 @@ interface NarrativeShiftCardProps {
   type: ShiftType;
   title: string;
   body: string;
-  time: string;
+  timestamp: string;
   live?: boolean;
 }
 
@@ -17,7 +17,7 @@ const TYPE_COLOR: Record<ShiftType, { border: BorderColor; text: string }> = {
   'ANOMALY DETECTED': { border: 'border-error',     text: 'text-error'     },
 };
 
-export function NarrativeShiftCard({ type, title, body, time, live = false }: NarrativeShiftCardProps) {
+export function NarrativeShiftCard({ type, title, body, timestamp, live = false }: NarrativeShiftCardProps) {
   const { border, text } = TYPE_COLOR[type];
   return (
     <div className={`card p-5 border-l-2 ${border}`}>
@@ -25,7 +25,7 @@ export function NarrativeShiftCard({ type, title, body, time, live = false }: Na
         <p className={`overline ${text}`}>{type}</p>
         <div className="flex items-center gap-1.5">
           {live && <StatusDot status="active" pulse />}
-          <span className="text-label-sm text-on_surface_variant font-body">{time}</span>
+          <span className="text-label-sm text-on_surface_variant font-body">{timestamp}</span>
         </div>
       </div>
       <h4 className="font-display font-semibold text-on_surface text-sm mb-2">{title}</h4>

@@ -51,11 +51,12 @@ vi.mock('../components/filters/FilterPresetModal', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  FolderOpen:   () => <span />,
-  MoreVertical: () => <span />,
-  Edit:         () => <span />,
-  Share2:       () => <span />,
-  Plus:         () => <span />,
+  FolderOpen:    () => <span />,
+  MoreVertical:  () => <span />,
+  Edit:          () => <span />,
+  Share2:        () => <span />,
+  Plus:          () => <span />,
+  AlertTriangle: () => <span />,
 }));
 
 import { FilterPresetLibrary } from '../pages/FilterPresetLibrary';

@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { useQuery } from '@apollo/client';
-import { FolderOpen, MoreVertical, Edit, Share2, Plus } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
+import { FolderOpen, MoreVertical, Edit, Share2, Plus, Trash2 } from 'lucide-react';
 import { GET_FILTER_PRESETS } from '../apollo/queries';
+import { DELETE_FILTER_PRESET } from '../apollo/mutations';
 import type { FilterPreset } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Badge } from '../components/ui/Badge';
@@ -28,12 +29,41 @@ export function FilterPresetLibrary() {
   const { data, loading, error, refetch } = useQuery(GET_FILTER_PRESETS);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<FilterPreset | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const [deleteFilterPreset] = useMutation(DELETE_FILTER_PRESET, {
+    refetchQueries: [{ query: GET_FILTER_PRESETS }],
+  });
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!openMenuId) return;
+    function handleOutsideClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [openMenuId]);
+
+  function handleDeletePreset(preset: FilterPreset) {
+    const affectedCount = preset.searches?.length ?? 0;
+    const confirmation = affectedCount > 0
+      ? `Delete "${preset.name}"? This will remove it from ${affectedCount} search${affectedCount !== 1 ? 'es' : ''}.`
+      : `Delete "${preset.name}"?`;
+    if (window.confirm(confirmation)) {
+      deleteFilterPreset({ variables: { id: preset.id } });
+    }
+    setOpenMenuId(null);
+  }
 
   const presets: FilterPreset[] = data?.filterPresets ?? [];
   const sorted = [...presets].sort((a, b) => (b.searches?.length ?? 0) - (a.searches?.length ?? 0));
 
   function openCreate() { setEditing(null); setModalOpen(true); }
-  function openEdit(p: FilterPreset) { setEditing(p); setModalOpen(true); }
+  function openEdit(p: FilterPreset) { setEditing(p); setModalOpen(true); setOpenMenuId(null); }
 
   const [featured, ...rest] = sorted;
 
@@ -116,14 +146,36 @@ export function FilterPresetLibrary() {
             {/* Rest — grid */}
             <div className="grid grid-cols-3 gap-4">
               {rest.map(preset => (
-                <div key={preset.id} className="card p-5 group">
+                <div key={preset.id} className="card p-5 group relative">
                   <div className="flex items-start justify-between mb-3">
                     <div className="w-9 h-9 rounded-sm bg-surface_container_high flex items-center justify-center text-lg text-on_surface_variant">
                       {TYPE_ICONS[preset.type]}
                     </div>
-                    <button className="text-on_surface_variant opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreVertical size={14} />
-                    </button>
+                    <div className="relative" ref={openMenuId === preset.id ? menuRef : null}>
+                      <button
+                        onClick={() => setOpenMenuId(openMenuId === preset.id ? null : preset.id)}
+                        className="text-on_surface_variant opacity-0 group-hover:opacity-100 transition-opacity hover:text-on_surface"
+                        aria-label={`Options for ${preset.name}`}
+                      >
+                        <MoreVertical size={14} />
+                      </button>
+                      {openMenuId === preset.id && (
+                        <div className="absolute right-0 top-6 z-20 w-36 glass rounded-md shadow-float border border-surface_bright/20 py-1">
+                          <button
+                            onClick={() => openEdit(preset)}
+                            className="w-full text-left px-3 py-2 text-body-sm text-on_surface font-body flex items-center gap-2 hover:bg-surface_container_high transition-colors"
+                          >
+                            <Edit size={12} className="text-on_surface_variant" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeletePreset(preset)}
+                            className="w-full text-left px-3 py-2 text-body-sm text-error font-body flex items-center gap-2 hover:bg-error/10 transition-colors"
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <h3 className="font-display font-semibold text-on_surface text-sm mb-1.5">{preset.name}</h3>
                   <p className="text-body-sm text-on_surface_variant font-body mb-4 line-clamp-2">

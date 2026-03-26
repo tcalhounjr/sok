@@ -102,6 +102,31 @@ export function CollectionManagement() {
               <h1 className="font-display font-bold text-headline-sm text-on_surface">
                 {activeCollection.name}
               </h1>
+              <div className="flex items-center gap-4 mt-2">
+                {activeCollection.totalArticles != null && (
+                  <div>
+                    <p className="overline text-on_surface_variant mb-0.5">TOTAL ARTICLES</p>
+                    <p className="font-display font-semibold text-on_surface text-sm">
+                      {activeCollection.totalArticles.toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                {activeCollection.sentimentSummary && (
+                  <div>
+                    <p className="overline text-on_surface_variant mb-0.5">SENTIMENT</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-1.5 w-24 rounded-full overflow-hidden">
+                        <div className="bg-secondary" style={{ width: `${activeCollection.sentimentSummary.positivePercent}%` }} />
+                        <div className="bg-tertiary" style={{ width: `${activeCollection.sentimentSummary.neutralPercent}%` }} />
+                        <div className="bg-error" style={{ width: `${activeCollection.sentimentSummary.negativePercent}%` }} />
+                      </div>
+                      <span className="text-label-sm text-on_surface_variant font-body">
+                        {activeCollection.sentimentSummary.positivePercent}% POS
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <button className="text-on_surface_variant hover:text-on_surface transition-colors p-1">✕</button>
           </div>

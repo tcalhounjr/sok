@@ -22,6 +22,9 @@ export default defineConfig({
         // Sprint 003 pages and components
         'src/pages/NarrativeTrends.tsx',
         'src/components/search/ForkModal.tsx',
+        // Sprint 004 components
+        'src/components/articles/ArticleDetailModal.tsx',
+        'src/components/layout/TopNav.tsx',
       ],
       thresholds: {
         lines: 60,
