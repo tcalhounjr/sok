@@ -418,7 +418,7 @@ export const topicFieldResolvers = {
 // Narrative Trends — DD-3: live Cypher aggregation
 // ---------------------------------------------------------------------------
 
-type NarrativeInterval = 'L7D' | 'L30D' | 'L90D';
+type NarrativeInterval = 'L7D' | 'L30D' | 'L90D' | 'ALL';
 
 export const narrativeTrendsQuery = {
   narrativeTrends: async (
@@ -428,7 +428,9 @@ export const narrativeTrendsQuery = {
   ): Promise<NarrativeTrends> => {
     requireAuth(callerId);
     const now = new Date();
-    const startDate = interval === 'L7D'  ? new Date(now.getTime() - 7  * 86400000).toISOString().split('T')[0]
+    const startDate = (interval === null || interval === undefined || interval === 'ALL')
+                    ? null
+                    : interval === 'L7D'  ? new Date(now.getTime() - 7  * 86400000).toISOString().split('T')[0]
                     : interval === 'L30D' ? new Date(now.getTime() - 30 * 86400000).toISOString().split('T')[0]
                     : interval === 'L90D' ? new Date(now.getTime() - 90 * 86400000).toISOString().split('T')[0]
                     : null;

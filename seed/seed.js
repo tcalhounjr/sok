@@ -30,7 +30,31 @@ import { dirname, join } from 'path';
 import 'dotenv/config';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const data = JSON.parse(readFileSync(join(__dirname, 'articles.json'), 'utf8'));
+const rawData = JSON.parse(readFileSync(join(__dirname, 'articles.json'), 'utf8'));
+
+// ---------------------------------------------------------------------------
+// Temporal seed shift — SOK-82
+// Shift all article publishedAt dates forward so the freshest article lands
+// ~3 days ago, preserving the full original spread (~90 days).
+// ---------------------------------------------------------------------------
+function shiftArticleDates(articles) {
+  const maxMs = Math.max(
+    ...articles.map(a => new Date(a.publishedAt).getTime())
+  );
+  const targetMs = Date.now() - 3 * 86400000; // today minus 3 days
+  const deltaMs = targetMs - maxMs;
+
+  return articles.map(a => {
+    const shifted = new Date(new Date(a.publishedAt).getTime() + deltaMs);
+    const shiftedDate = shifted.toISOString().split('T')[0];
+    return { ...a, publishedAt: shiftedDate };
+  });
+}
+
+const data = {
+  ...rawData,
+  articles: shiftArticleDates(rawData.articles),
+};
 
 const driver = neo4j.driver(
   process.env.NEO4J_URI,

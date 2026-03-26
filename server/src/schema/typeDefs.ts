@@ -12,6 +12,7 @@ export const typeDefs = `#graphql
     L7D
     L30D
     L90D
+    ALL
   }
 
   enum Sentiment {
