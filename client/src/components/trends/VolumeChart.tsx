@@ -53,7 +53,7 @@ export function VolumeChart({ data, loading, onBarClick }: VolumeChartProps) {
             <Bar
               dataKey="volume"
               radius={[2, 2, 0, 0]}
-              onClick={onBarClick ? (entry: DailyVolume) => {
+              onClick={onBarClick ? (entry: any) => {
                 if (entry.volume > 0) onBarClick(entry.date);
               } : undefined}
             >
