@@ -50,8 +50,8 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
             />
             <Tooltip content={<ChartTooltip />} />
             <Bar dataKey="volume" radius={[2, 2, 0, 0]}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={i === data.length - 1 ? '#4edea3' : '#222a3d'} />
+              {data.map((entry, i) => (
+                <Cell key={i} fill={entry.volume > 0 ? '#4edea3' : '#222a3d'} />
               ))}
             </Bar>
           </BarChart>

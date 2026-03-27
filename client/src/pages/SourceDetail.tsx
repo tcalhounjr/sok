@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { ArrowLeft, Globe, Layers, BarChart2 } from 'lucide-react';
 import { GET_SOURCE, GET_SOURCE_ARTICLES } from '../apollo/queries';
@@ -23,17 +23,22 @@ function sentimentVariant(s: string): 'positive' | 'negative' | 'neutral' {
   return 'neutral';
 }
 
+const PAGE_SIZE = 20;
+
 export function SourceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { pushCrumb } = useBreadcrumb();
+  const [page, setPage] = useState(0);
+
+  useEffect(() => { setPage(0); }, [id]);
 
   const { data: sourceData, loading: sourceLoading, error: sourceError, refetch: refetchSource } =
     useQuery(GET_SOURCE, { variables: { id }, skip: !id });
 
   const { data: articlesData, loading: articlesLoading, error: articlesError, refetch: refetchArticles } =
     useQuery(GET_SOURCE_ARTICLES, {
-      variables: { sourceId: id, limit: 20, offset: 0 },
+      variables: { sourceId: id, limit: PAGE_SIZE, offset: page * PAGE_SIZE },
       skip: !id,
     });
 
@@ -197,6 +202,23 @@ export function SourceDetail() {
             ))}
           </div>
         )}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-surface_bright/10">
+          <button
+            onClick={() => setPage(p => p - 1)}
+            disabled={page === 0}
+            className="btn-secondary text-xs disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-label-sm text-on_surface_variant font-body">Page {page + 1}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={(articles?.length ?? 0) < PAGE_SIZE}
+            className="btn-secondary text-xs disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

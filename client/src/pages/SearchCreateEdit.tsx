@@ -158,9 +158,6 @@ export function SearchCreateEdit() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <p className="overline text-primary">2. LOGICAL OPERATORS &amp; KEYWORDS</p>
-              <button className="text-label-sm text-secondary font-body hover:underline">
-                &lt;/&gt; Advanced Syntax
-              </button>
             </div>
             <div className="space-y-4">
               <div>
@@ -205,7 +202,8 @@ export function SearchCreateEdit() {
             </div>
           </div>
 
-          {/* Section 3: Taxonomy */}
+          {/* TODO: wire topic to backend before re-enabling */}
+          {false && (
           <div className="card p-6">
             <p className="overline text-primary mb-4">3. TOPIC TAXONOMY</p>
             <div className="grid grid-cols-4 gap-3">
@@ -225,6 +223,7 @@ export function SearchCreateEdit() {
               ))}
             </div>
           </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between mt-6 max-w-2xl">
