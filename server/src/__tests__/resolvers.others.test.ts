@@ -885,7 +885,7 @@ describe('narrativeTrendsQuery.narrativeTrends — SOK-82 ALL interval', () => {
     );
 
     const [, cypher] = mockRunQuery.mock.calls[0];
-    expect(cypher).toMatch(/a\.publishedAt\s*>=\s*\$startDate/);
+    expect(cypher).toMatch(/a\.publishedAt\s*>=\s*date\(\$startDate\)/);
   });
 
   it('should return interval L7D on the result when interval is L7D', async () => {

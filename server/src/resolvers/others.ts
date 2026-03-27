@@ -437,7 +437,7 @@ export const narrativeTrendsQuery = {
 
     const volRecords = await runQuery(driver, `
       MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)
-      WHERE ($startDate IS NULL OR a.publishedAt >= $startDate)
+      WHERE ($startDate IS NULL OR a.publishedAt >= date($startDate))
       WITH a, date(a.publishedAt) AS day
       RETURN day,
              count(a) AS volume,
@@ -462,8 +462,9 @@ export const narrativeTrendsQuery = {
 
     const srcRecords = await runQuery(driver, `
       MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)-[:PUBLISHED_BY]->(src:Source)
+      WHERE ($startDate IS NULL OR a.publishedAt >= date($startDate))
       RETURN src, count(a) AS cnt ORDER BY cnt DESC LIMIT 10
-    `, { searchId });
+    `, { searchId, startDate });
 
     const topSources = srcRecords.map(r => ({
       source: toObject(r.get('src')) as SourceNode,
@@ -472,8 +473,9 @@ export const narrativeTrendsQuery = {
 
     const topicRecords = await runQuery(driver, `
       MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)-[:TAGGED_WITH]->(t:Topic)
+      WHERE ($startDate IS NULL OR a.publishedAt >= date($startDate))
       RETURN t, count(a) AS cnt ORDER BY cnt DESC LIMIT 10
-    `, { searchId });
+    `, { searchId, startDate });
 
     const topTopics = topicRecords.map(r => ({
       topic: toObject(r.get('t')) as TopicNode,
@@ -551,13 +553,13 @@ export const narrativeTrendsQuery = {
 
         const firstTopicRecords = await runQuery(driver, `
           MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)-[:TAGGED_WITH]->(t:Topic)
-          WHERE a.publishedAt >= $startDate AND a.publishedAt <= $endDate
+          WHERE a.publishedAt >= date($startDate) AND a.publishedAt <= date($endDate)
           RETURN t.label AS label, count(a) AS cnt
         `, { searchId, startDate: firstStartDate, endDate: firstEndDate });
 
         const lastTopicRecords = await runQuery(driver, `
           MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)-[:TAGGED_WITH]->(t:Topic)
-          WHERE a.publishedAt >= $startDate AND a.publishedAt <= $endDate
+          WHERE a.publishedAt >= date($startDate) AND a.publishedAt <= date($endDate)
           RETURN t.label AS label, count(a) AS cnt
         `, { searchId, startDate: lastStartDate, endDate: lastEndDate });
 
