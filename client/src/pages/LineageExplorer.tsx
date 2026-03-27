@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { GET_SEARCH_LINEAGE } from '../apollo/queries';
 import { Skeleton } from '../components/ui/Skeleton';
 import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
@@ -13,6 +14,13 @@ export function LineageExplorer() {
   const { id } = useParams<{ id: string }>();
   const { data, loading, error, refetch } = useQuery(GET_SEARCH_LINEAGE, { variables: { id } });
   const [selected, setSelected] = useState<LineageNode | null>(null);
+  const { pushCrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    if (id) {
+      pushCrumb({ label: 'Lineage', path: `/lineage/${id}` });
+    }
+  }, [id, pushCrumb]);
 
   const lineage = data?.searchLineage;
 
@@ -31,7 +39,6 @@ export function LineageExplorer() {
     <div className="flex h-full">
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="mb-6">
-          <p className="overline text-primary mb-1">NEO4J RELATIONSHIP MODEL</p>
           <h1 className="font-display text-headline-md text-on_surface">Search Lineage Explorer</h1>
           <p className="text-body-md text-on_surface_variant mt-1">
             Visualize the evolution of your intelligence queries. Map derivative searches, filter

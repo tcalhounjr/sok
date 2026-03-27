@@ -29,6 +29,7 @@ vi.mock('@apollo/client', () => ({
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
   useParams:   () => mockUseParams(),
+  useLocation: () => ({ pathname: '/search/create', search: '', hash: '', state: null }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
@@ -354,21 +355,21 @@ describe('SearchCreateEdit — exclude keywords input', () => {
 // ===========================================================================
 
 describe('SearchCreateEdit — topic taxonomy', () => {
-  it('should render all four taxonomy topic buttons', () => {
+  it('should not render topic taxonomy buttons (hidden pending backend wire-up)', () => {
     setupCreateMode();
     renderPage();
-    expect(screen.getByText('Technology')).toBeDefined();
-    expect(screen.getByText('Geopolitics')).toBeDefined();
-    expect(screen.getByText('Economics')).toBeDefined();
-    expect(screen.getByText('Supply Chain')).toBeDefined();
+    expect(screen.queryByText('Technology')).toBeNull();
+    expect(screen.queryByText('Geopolitics')).toBeNull();
+    expect(screen.queryByText('Economics')).toBeNull();
+    expect(screen.queryByText('Supply Chain')).toBeNull();
   });
 
-  it('should allow selecting a different taxonomy topic', async () => {
+  it('should render the keywords section without taxonomy', () => {
     setupCreateMode();
     renderPage();
-    await userEvent.click(screen.getByText('Geopolitics'));
-    // No crash; the selected state updates via className but we confirm the button exists
-    expect(screen.getByText('Geopolitics')).toBeDefined();
+    // Keywords section still present; taxonomy hidden
+    expect(screen.getByText('INCLUDE:')).toBeDefined();
+    expect(screen.queryByText('Geopolitics')).toBeNull();
   });
 });
 

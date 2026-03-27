@@ -105,6 +105,14 @@ export interface SearchLineage {
   orphanCount: number;
 }
 
+export interface NarrativeShift {
+  type: string;
+  title: string;
+  body: string;
+  timestamp: string;
+  live: boolean;
+}
+
 export interface NarrativeTrends {
   searchId: string;
   searchName: string;
@@ -123,6 +131,7 @@ export interface NarrativeTrends {
   topSources: TopSourceCount[];
   topTopics: TopTopicCount[];
   totalArticles: number;
+  narrativeShifts: NarrativeShift[];
 }
 
 export interface VolumeProjection {

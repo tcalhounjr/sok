@@ -21,7 +21,7 @@ await applySchema(driver);
 const allowedOrigins = [
   'http://localhost:5173',   // Vite dev server
   'http://localhost:4173',   // Vite preview
-  process.env.CORS_ORIGIN,   // Vercel production URL
+  ...(process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) ?? []),
 ].filter(Boolean) as string[];
 
 // Strict CORS for the GraphQL endpoint: only listed origins are allowed.

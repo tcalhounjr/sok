@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '../ui/Skeleton';
 import type { TopSourceCount } from '../../types';
 
@@ -5,18 +6,17 @@ interface SourceRankingsProps {
   sources: TopSourceCount[];
   totalArticles: number;
   loading: boolean;
+  searchId?: string;
 }
 
-export function SourceRankings({ sources, totalArticles, loading }: SourceRankingsProps) {
+export function SourceRankings({ sources, totalArticles: _totalArticles, loading, searchId }: SourceRankingsProps) {
+  const navigate = useNavigate();
   const maxCount = sources[0]?.count ?? 1;
 
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display font-semibold text-on_surface text-sm">Top Sources</h3>
-        <button className="text-label-sm text-primary font-body hover:underline">
-          VIEW ALL {totalArticles || ''} SOURCES
-        </button>
       </div>
       {loading ? (
         <Skeleton className="h-32" />
@@ -27,7 +27,12 @@ export function SourceRankings({ sources, totalArticles, loading }: SourceRankin
             return (
               <div key={source.id}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-body-sm text-on_surface font-body">{source.name}</span>
+                  <button
+                    onClick={() => navigate(`/source/${source.id}${searchId ? `?searchId=${searchId}` : ''}`)}
+                    className="text-body-sm text-on_surface font-body hover:text-primary transition-colors text-left"
+                  >
+                    {source.name}
+                  </button>
                   <span className="text-label-sm text-on_surface_variant font-body">
                     {count.toLocaleString()} hits
                   </span>

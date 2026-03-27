@@ -22,12 +22,20 @@ export interface FilterPreset {
   searches?: Search[];
 }
 
+export interface SentimentSummary {
+  positivePercent: number;
+  neutralPercent: number;
+  negativePercent: number;
+}
+
 export interface Collection {
   id: string;
   name: string;
   description?: string;
   createdAt: string;
   searches?: Search[];
+  totalArticles?: number;
+  sentimentSummary?: SentimentSummary;
 }
 
 export interface Article {
@@ -63,6 +71,16 @@ export interface Topic {
   category: string;
 }
 
+export type NarrativeShiftType = 'EMERGENT TOPIC' | 'SENTIMENT SHIFT' | 'ANOMALY DETECTED';
+
+export interface NarrativeShift {
+  type: NarrativeShiftType;
+  title: string;
+  body: string;
+  timestamp: string;
+  live: boolean;
+}
+
 export interface NarrativeTrends {
   searchId: string;
   searchName: string;
@@ -72,6 +90,7 @@ export interface NarrativeTrends {
   sentimentBreakdown: SentimentBreakdown;
   topSources: TopSourceCount[];
   topTopics: TopTopicCount[];
+  narrativeShifts: NarrativeShift[];
 }
 
 export interface DailyVolume {

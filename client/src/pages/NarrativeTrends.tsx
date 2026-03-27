@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { GET_NARRATIVE_TRENDS } from '../apollo/queries';
 import { StatusDot } from '../components/ui/StatusDot';
@@ -11,30 +11,18 @@ import { SentimentBreakdown } from '../components/trends/SentimentBreakdown';
 import { TopicCloud } from '../components/trends/TopicCloud';
 import { SourceRankings } from '../components/trends/SourceRankings';
 import { NarrativeShiftCard } from '../components/trends/NarrativeShiftCard';
+import { DayArticlesModal } from '../components/articles/DayArticlesModal';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
+import type { NarrativeShift } from '../types';
 
-const INTERVALS = ['L7D', 'L30D', 'L90D'] as const;
-
-const NARRATIVE_SHIFTS = [
-  {
-    type: 'EMERGENT TOPIC'   as const, live: true,  time: 'LIVE',
-    title: 'Sub-narrative: AI Hardware Demand',
-    body: 'Significant spike in mentions related to proprietary AI chips and local manufacturing dependencies.',
-  },
-  {
-    type: 'SENTIMENT SHIFT'  as const, live: false, time: '2h ago',
-    title: 'Neutral Transition: Export Bans',
-    body: 'High-volume coverage transitioning from critical to descriptive as legislative impacts become clearer.',
-  },
-  {
-    type: 'ANOMALY DETECTED' as const, live: false, time: '5h ago',
-    title: 'Coverage Gap: Southeast Asia',
-    body: 'Unexpected drop in regional reporting from Tier 1 sources despite active regulatory developments.',
-  },
-];
+const INTERVALS = ['ALL', 'L7D', 'L30D', 'L90D'] as const;
 
 export function NarrativeTrends() {
   const { id } = useParams<{ id: string }>();
-  const [interval, setIntervalVal] = useState('L7D');
+  const navigate = useNavigate();
+  const { pushCrumb } = useBreadcrumb();
+  const [interval, setIntervalVal] = useState('ALL');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_NARRATIVE_TRENDS, {
     variables: { searchId: id, interval },
@@ -43,20 +31,33 @@ export function NarrativeTrends() {
 
   const trends = data?.narrativeTrends;
 
+  useEffect(() => {
+    if (id) {
+      pushCrumb({ label: 'Narrative Trends', path: `/trends/${id}` });
+    }
+  }, [id, pushCrumb]);
+
   return (
+    <>
     <div className="flex h-full">
       {/* Left sidebar */}
       <aside className="w-44 flex-shrink-0 p-5 border-r border-surface_bright/10">
         <div className="space-y-0.5">
           {[
-            { label: 'PINNED',    active: false },
-            { label: 'RECENT',    active: true  },
-            { label: 'LIBRARIES', active: false },
-            { label: 'LINEAGE',   active: false },
-            { label: 'SOURCES',   active: false },
-          ].map(({ label, active }) => (
+            {
+              label: 'RECENT',
+              active: true,
+              onClick: undefined,
+            },
+            {
+              label: 'LINEAGE',
+              active: false,
+              onClick: id ? () => navigate(`/lineage/${id}`) : undefined,
+            },
+          ].map(({ label, active, onClick }) => (
             <button
               key={label}
+              onClick={onClick}
               className={`w-full text-left px-3 py-2 rounded-sm text-body-sm font-body transition-colors flex items-center gap-2 ${
                 active
                   ? 'text-on_surface border-l-2 border-secondary pl-2.5'
@@ -67,10 +68,6 @@ export function NarrativeTrends() {
               {label}
             </button>
           ))}
-        </div>
-        <div className="mt-8 space-y-0.5">
-          <button className="w-full text-left px-3 py-2 text-body-sm text-on_surface_variant font-body hover:text-on_surface transition-colors">ARCHIVE</button>
-          <button className="w-full text-left px-3 py-2 text-body-sm text-on_surface_variant font-body hover:text-on_surface transition-colors">HELP</button>
         </div>
       </aside>
 
@@ -117,7 +114,11 @@ export function NarrativeTrends() {
             {/* Charts row */}
             <div className="grid grid-cols-3 gap-5 mb-5">
               <div className="col-span-2">
-                <VolumeChart data={trends?.volumeOverTime ?? []} loading={loading} />
+                <VolumeChart
+                data={trends?.volumeOverTime ?? []}
+                loading={loading}
+                onBarClick={setSelectedDate}
+              />
               </div>
               <SentimentBreakdown data={trends?.sentimentBreakdown ?? null} loading={loading} />
             </div>
@@ -129,6 +130,7 @@ export function NarrativeTrends() {
                 sources={trends?.topSources ?? []}
                 totalArticles={trends?.totalArticles ?? 0}
                 loading={loading}
+                searchId={id}
               />
             </div>
 
@@ -137,15 +139,30 @@ export function NarrativeTrends() {
               <h3 className="font-display font-semibold text-on_surface text-sm mb-4">
                 Recent Narrative Shifts
               </h3>
-              <div className="grid grid-cols-3 gap-4">
-                {NARRATIVE_SHIFTS.map((shift, i) => (
-                  <NarrativeShiftCard key={i} {...shift} />
-                ))}
-              </div>
+              {(trends?.narrativeShifts ?? []).length === 0 && !loading ? (
+                <p className="text-body-sm text-on_surface_variant font-body">
+                  No significant shifts detected in this period.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  {(trends?.narrativeShifts ?? []).map((shift: NarrativeShift, i: number) => (
+                    <NarrativeShiftCard key={i} {...shift} />
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
       </div>
     </div>
+
+    {id && (
+      <DayArticlesModal
+        searchId={id}
+        date={selectedDate}
+        onClose={() => setSelectedDate(null)}
+      />
+    )}
+    </>
   );
 }

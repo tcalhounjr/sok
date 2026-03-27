@@ -71,6 +71,31 @@ vi.mock('lucide-react', () => ({
   Eye:        () => <span />,
   TrendingUp: () => <span />,
   X:          () => <span />,
+  Edit:       () => <span />,
+  Plus:       () => <span />,
+}));
+
+// SearchDetail now uses QueryErrorPanel — add mock so the import resolves
+vi.mock('../components/ui/QueryErrorPanel', () => ({
+  QueryErrorPanel: ({ message }: { message: string }) => (
+    <div role="alert">{message}</div>
+  ),
+}));
+
+// SearchDetail now uses ArticleDetailModal — add mock so the import resolves
+vi.mock('../components/articles/ArticleDetailModal', () => ({
+  ArticleDetailModal: ({
+    articleId,
+    onClose,
+  }: {
+    articleId: string | null;
+    onClose: () => void;
+  }) =>
+    articleId ? (
+      <div data-testid="article-detail-modal" data-article-id={articleId}>
+        <button data-testid="modal-close" onClick={onClose}>Close</button>
+      </div>
+    ) : null,
 }));
 
 import { SearchDetail } from '../pages/SearchDetail';
@@ -279,9 +304,9 @@ describe('SearchDetail — navigation', () => {
     mockUseQuery.mockReturnValue({ data: { search: SEARCH_FIXTURE }, loading: false });
   });
 
-  it('should navigate to the lineage page when Version History is clicked', async () => {
+  it('should navigate to the lineage page when View Lineage is clicked', async () => {
     renderPage();
-    await userEvent.click(screen.getByText('Version History'));
+    await userEvent.click(screen.getByText('View Lineage'));
     expect(mockNavigate).toHaveBeenCalledWith('/lineage/search-1');
   });
 

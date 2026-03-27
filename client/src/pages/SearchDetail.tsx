@@ -1,28 +1,101 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
-import { GitBranch, Clock, Eye, TrendingUp, X } from 'lucide-react';
-import { GET_SEARCH } from '../apollo/queries';
-import { REMOVE_FILTER_FROM_SEARCH } from '../apollo/mutations';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
+import { GitBranch, Clock, Edit, Eye, TrendingUp, X, Plus } from 'lucide-react';
+import { GET_SEARCH, GET_FILTER_PRESETS } from '../apollo/queries';
+import { REMOVE_FILTER_FROM_SEARCH, APPLY_FILTER_TO_SEARCH } from '../apollo/mutations';
 import { KeywordTag } from '../components/ui/KeywordTag';
 import { StatusDot } from '../components/ui/StatusDot';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
 import { ForkModal } from '../components/search/ForkModal';
+import { ArticleDetailModal } from '../components/articles/ArticleDetailModal';
 import { timeAgo } from '../lib/utils';
+import type { Search, Article, FilterPreset } from '../types';
+
+const PAGE_SIZE = 200;
 
 export function SearchDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pushCrumb } = useBreadcrumb();
   const [forkOpen, setForkOpen] = useState(false);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [filterPickerOpen, setFilterPickerOpen] = useState(false);
+  const filterPickerRef = useRef<HTMLDivElement>(null);
 
-  const { data, loading, error, refetch } = useQuery(GET_SEARCH, { variables: { id } });
-  const search = data?.search;
+  const { data, loading, error, refetch, fetchMore } = useQuery(GET_SEARCH, {
+    variables: { id, offset: 0 },
+  });
+  const search: Search | undefined = data?.search;
 
   const [removeFilter] = useMutation(REMOVE_FILTER_FROM_SEARCH, {
-    refetchQueries: [{ query: GET_SEARCH, variables: { id } }],
+    refetchQueries: [{ query: GET_SEARCH, variables: { id, offset: 0 } }],
   });
+
+  const [applyFilter] = useMutation(APPLY_FILTER_TO_SEARCH, {
+    refetchQueries: [{ query: GET_SEARCH, variables: { id, offset: 0 } }],
+    onCompleted: () => setFilterPickerOpen(false),
+  });
+
+  const { data: presetsData } = useQuery(GET_FILTER_PRESETS);
+  const allPresets: FilterPreset[] = presetsData?.filterPresets ?? [];
+  const appliedIds = new Set((search?.filters ?? []).map((f: FilterPreset) => f.id));
+  const availablePresets = allPresets.filter(p => !appliedIds.has(p.id));
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filterPickerRef.current && !filterPickerRef.current.contains(e.target as Node)) {
+        setFilterPickerOpen(false);
+      }
+    }
+    if (filterPickerOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [filterPickerOpen]);
+
+  useEffect(() => {
+    const articles = search?.articles ?? [];
+    if (articles.length > 0 && articles.length >= PAGE_SIZE) {
+      setHasMore(true);
+    } else {
+      setHasMore(false);
+    }
+  }, [search?.articles]);
+
+  useEffect(() => {
+    if (search && id) {
+      pushCrumb({ label: search.name, path: `/search/${id}` });
+    }
+  }, [search?.name, id, pushCrumb]);
+
+  function handleLoadMore() {
+    const nextOffset = offset + PAGE_SIZE;
+    fetchMore({
+      variables: { id, offset: nextOffset },
+      updateQuery(prev, { fetchMoreResult }) {
+        if (!fetchMoreResult) return prev;
+        const newArticles: Article[] = fetchMoreResult.search.articles ?? [];
+        if (newArticles.length < PAGE_SIZE) {
+          setHasMore(false);
+        }
+        return {
+          ...prev,
+          search: {
+            ...prev.search,
+            articles: [
+              ...(prev.search.articles ?? []),
+              ...newArticles,
+            ],
+          },
+        };
+      },
+    });
+    setOffset(nextOffset);
+  }
 
   if (error) return (
     <div className="p-8 h-full">
@@ -45,9 +118,11 @@ export function SearchDetail() {
     <div className="p-8 text-on_surface_variant text-body-md">Search not found.</div>
   );
 
-  const parentPath = search.parents?.length
-    ? search.parents.map((p: any) => p.name).join(' + ')
+  const parentPath: string | null = search.parents?.length
+    ? search.parents.map((p: Search) => p.name).join(' + ')
     : null;
+
+  const articles: Article[] = search.articles ?? [];
 
   return (
     <>
@@ -73,8 +148,16 @@ export function SearchDetail() {
                 onClick={() => navigate(`/lineage/${id}`)}
                 className="btn-secondary flex items-center gap-2 text-xs"
               >
-                <Clock size={12} /> Version History
+                <Clock size={12} /> View Lineage
               </button>
+              {id && (
+                <button
+                  onClick={() => navigate(`/search/${id}/edit`)}
+                  className="btn-secondary flex items-center gap-2 text-xs"
+                >
+                  <Edit size={12} /> Edit
+                </button>
+              )}
               <button
                 onClick={() => setForkOpen(true)}
                 className="btn-primary flex items-center gap-2 text-xs"
@@ -125,14 +208,40 @@ export function SearchDetail() {
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <p className="overline text-on_surface_variant">REFINEMENT PRESETS</p>
-                  <div className="flex gap-2">
-                    <button className="btn-secondary text-xs py-1">Save Preset</button>
-                    <button className="btn-secondary text-xs py-1">Import</button>
+                  <div className="relative" ref={filterPickerRef}>
+                    <button
+                      onClick={() => setFilterPickerOpen(o => !o)}
+                      className="btn-secondary text-xs py-1 flex items-center gap-1"
+                    >
+                      <Plus size={10} /> Apply Filter
+                    </button>
+                    {filterPickerOpen && (
+                      <div className="absolute right-0 top-full mt-1 w-56 bg-surface_container_high rounded-sm ghost-border shadow-ambient z-10">
+                        {availablePresets.length === 0 ? (
+                          <p className="text-body-sm text-on_surface_variant font-body p-3">
+                            No presets available. Create one in the Preset Library.
+                          </p>
+                        ) : (
+                          <div className="py-1 max-h-48 overflow-y-auto">
+                            {availablePresets.map(p => (
+                              <button
+                                key={p.id}
+                                onClick={() => applyFilter({ variables: { filterId: p.id, searchId: id } })}
+                                className="w-full text-left px-3 py-2 hover:bg-surface_container transition-colors"
+                              >
+                                <p className="overline text-on_tertiary_container">{p.type}</p>
+                                <p className="text-body-sm text-on_surface font-body truncate">{p.name}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-                {search.filters?.length > 0 ? (
+                {search.filters && search.filters.length > 0 ? (
                   <div className="space-y-3">
-                    {search.filters.map((f: any) => (
+                    {search.filters.map((f: FilterPreset) => (
                       <div key={f.id} className="p-3 bg-surface_container_high rounded-sm ghost-border">
                         <div className="flex items-center justify-between mb-1">
                           <p className="overline text-on_tertiary_container">{f.type}</p>
@@ -157,13 +266,13 @@ export function SearchDetail() {
                   <div>
                     <p className="overline text-on_surface_variant mb-1">SIGNAL DENSITY</p>
                     <p className="font-display font-bold text-headline-sm text-on_surface">
-                      {search.articles?.length ?? 0}
+                      {articles.length}
                     </p>
                   </div>
                   <div>
                     <p className="overline text-on_surface_variant mb-1">TRUE MATCHES</p>
                     <p className="font-display font-bold text-headline-sm text-secondary">
-                      {search.articles?.length ? '82%' : '—'}
+                      {articles.length ? '82%' : '—'}
                     </p>
                   </div>
                 </div>
@@ -178,7 +287,7 @@ export function SearchDetail() {
 
             {/* Live Preview */}
             <div className="col-span-1">
-              <div className="card p-5 h-full">
+              <div className="card p-5 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Eye size={13} className="text-on_surface_variant" />
@@ -189,9 +298,21 @@ export function SearchDetail() {
                     <span className="overline text-secondary">STREAMING</span>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  {search.articles?.slice(0, 5).map((article: any) => (
-                    <div key={article.id} className="border-b border-surface_bright/10 pb-4 last:border-0 last:pb-0">
+
+                {/* Article count label */}
+                {articles.length > 0 && (
+                  <p className="text-label-sm text-on_surface_variant font-body mb-3">
+                    {articles.length} articles matched
+                  </p>
+                )}
+
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-[600px]">
+                  {articles.map((article: Article) => (
+                    <button
+                      key={article.id}
+                      onClick={() => setSelectedArticleId(article.id)}
+                      className="w-full text-left border-b border-surface_bright/10 pb-4 last:border-0 last:pb-0 hover:bg-surface_container_high/30 rounded-sm transition-colors -mx-1 px-1"
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <p className="overline text-on_surface_variant flex-1 truncate">
                           {article.source?.name?.toUpperCase()} | {timeAgo(article.publishedAt).toUpperCase()}
@@ -205,14 +326,24 @@ export function SearchDetail() {
                         {article.headline}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <Badge variant={article.sentiment.toLowerCase() as any}>{article.sentiment}</Badge>
+                        <Badge variant={article.sentiment.toLowerCase() as 'positive' | 'neutral' | 'negative'}>{article.sentiment}</Badge>
                       </div>
-                    </div>
+                    </button>
                   ))}
-                  {(!search.articles || search.articles.length === 0) && (
+                  {articles.length === 0 && (
                     <p className="text-body-sm text-on_surface_variant font-body">No results yet.</p>
                   )}
                 </div>
+
+                {/* Load more */}
+                {hasMore && (
+                  <button
+                    onClick={handleLoadMore}
+                    className="w-full btn-secondary text-xs mt-4"
+                  >
+                    Load more
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -220,6 +351,10 @@ export function SearchDetail() {
       </div>
 
       <ForkModal open={forkOpen} onClose={() => setForkOpen(false)} search={search} />
+      <ArticleDetailModal
+        articleId={selectedArticleId}
+        onClose={() => setSelectedArticleId(null)}
+      />
     </>
   );
 }

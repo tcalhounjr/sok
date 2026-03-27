@@ -87,3 +87,13 @@
     @apply font-mono text-label-sm text-on_surface_variant;
   }
 }
+
+/* ---- Native date picker icon — invert dark icon for dark surfaces ---- */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.5);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+

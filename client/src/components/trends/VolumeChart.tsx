@@ -5,6 +5,7 @@ import type { DailyVolume } from '../../types';
 interface VolumeChartProps {
   data: DailyVolume[];
   loading: boolean;
+  onBarClick?: (date: string) => void;
 }
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -17,7 +18,7 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-export function VolumeChart({ data, loading }: VolumeChartProps) {
+export function VolumeChart({ data, loading, onBarClick }: VolumeChartProps) {
   return (
     <div className="card p-5">
       <div className="flex items-start justify-between mb-4">
@@ -49,9 +50,19 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
               }
             />
             <Tooltip content={<ChartTooltip />} />
-            <Bar dataKey="volume" radius={[2, 2, 0, 0]}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={i === data.length - 1 ? '#4edea3' : '#222a3d'} />
+            <Bar
+              dataKey="volume"
+              radius={[2, 2, 0, 0]}
+              onClick={onBarClick ? (entry: any) => {
+                if (entry.volume > 0) onBarClick(entry.date);
+              } : undefined}
+            >
+              {data.map((entry, i) => (
+                <Cell
+                  key={i}
+                  fill={entry.volume > 0 ? '#4edea3' : '#222a3d'}
+                  style={{ cursor: onBarClick && entry.volume > 0 ? 'pointer' : 'default' }}
+                />
               ))}
             </Bar>
           </BarChart>

@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useMutation, useQuery } from '@apollo/client';
-import { CheckCircle, AlertTriangle, ChevronDown, XCircle } from 'lucide-react';
+import { AlertTriangle, XCircle } from 'lucide-react';
 import { CREATE_SEARCH, UPDATE_SEARCH } from '../apollo/mutations';
 import { GET_SEARCH, GET_SEARCHES } from '../apollo/queries';
 import { useVolumeProjection } from '../hooks/useVolumeProjection';
 import { KeywordTag } from '../components/ui/KeywordTag';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatusDot } from '../components/ui/StatusDot';
+import { useBreadcrumb } from '../context/BreadcrumbContext';
 
 const TOPIC_TAXONOMY = [
   { label: 'Technology'   },
@@ -18,8 +19,17 @@ const TOPIC_TAXONOMY = [
 
 export function SearchCreateEdit() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id?: string }>();
   const isEdit = Boolean(id);
+  const { setCrumbs } = useBreadcrumb();
+
+  useEffect(() => {
+    setCrumbs([
+      { label: 'Dashboard', path: '/' },
+      { label: isEdit ? 'Edit Search' : 'New Search', path: location.pathname },
+    ]);
+  }, [setCrumbs, isEdit, location.pathname]);
 
   const [name, setName]           = useState('');
   const [keywords, setKeywords]   = useState<string[]>([]);
@@ -131,6 +141,7 @@ export function SearchCreateEdit() {
                     className="flex-1 px-3 py-2 bg-surface_container_high rounded-sm text-body-sm text-on_surface ghost-border focus:outline-none" />
                 </div>
               </div>
+              {/* TODO: Refinement Level — deferred to future release. Schema field + resolver not yet implemented.
               <div>
                 <label className="overline text-on_surface_variant block mb-1.5">Refinement Level</label>
                 <div className="flex items-center gap-2 px-3 py-2.5 bg-surface_container_high rounded-sm ghost-border">
@@ -139,6 +150,7 @@ export function SearchCreateEdit() {
                   <ChevronDown size={13} className="ml-auto text-on_surface_variant" />
                 </div>
               </div>
+              */}
             </div>
           </div>
 
@@ -146,9 +158,6 @@ export function SearchCreateEdit() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <p className="overline text-primary">2. LOGICAL OPERATORS &amp; KEYWORDS</p>
-              <button className="text-label-sm text-secondary font-body hover:underline">
-                &lt;/&gt; Advanced Syntax
-              </button>
             </div>
             <div className="space-y-4">
               <div>
@@ -193,7 +202,8 @@ export function SearchCreateEdit() {
             </div>
           </div>
 
-          {/* Section 3: Taxonomy */}
+          {/* TODO: wire topic to backend before re-enabling */}
+          {false && (
           <div className="card p-6">
             <p className="overline text-primary mb-4">3. TOPIC TAXONOMY</p>
             <div className="grid grid-cols-4 gap-3">
@@ -213,6 +223,7 @@ export function SearchCreateEdit() {
               ))}
             </div>
           </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between mt-6 max-w-2xl">

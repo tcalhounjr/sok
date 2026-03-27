@@ -2,9 +2,9 @@ import { Search, Bell, Settings } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const tabs: Record<string, string[]> = {
-  '/':        ['Analytics', 'Narratives', 'Sources', 'Collections'],
+  '/':        ['Sources'],
   '/presets': ['Curation Tools'],
-  '/trends':  ['Search', 'Collections', 'Filters', 'Trends'],
+  '/trends':  ['Trends'],
 };
 
 export function TopNav() {
@@ -28,7 +28,7 @@ export function TopNav() {
                 className={`px-3 py-1 text-body-md transition-colors ${
                   i === currentTabs.length - 1
                     ? 'text-on_surface border-b-2 border-primary'
-                    : 'text-on_surface_variant hover:text-on_surface'
+                    : 'text-on_surface_variant cursor-default'
                 }`}
               >
                 {tab}

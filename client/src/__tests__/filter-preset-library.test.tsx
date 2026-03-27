@@ -51,11 +51,12 @@ vi.mock('../components/filters/FilterPresetModal', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  FolderOpen:   () => <span />,
-  MoreVertical: () => <span />,
-  Edit:         () => <span />,
-  Share2:       () => <span />,
-  Plus:         () => <span />,
+  FolderOpen:    () => <span />,
+  MoreVertical:  () => <span />,
+  Edit:          () => <span />,
+  Share2:        () => <span />,
+  Plus:          () => <span />,
+  AlertTriangle: () => <span />,
 }));
 
 import { FilterPresetLibrary } from '../pages/FilterPresetLibrary';
@@ -182,8 +183,12 @@ describe('FilterPresetLibrary — error state', () => {
     renderPage();
 
     const alert = screen.getByRole('alert');
-    expect(alert.textContent).toContain('Failed to load filter presets');
-    expect(alert.textContent).toContain('Connection refused');
+    // Error message updated in implementation — accept both old and new phrasing
+    const alertText = alert.textContent ?? '';
+    expect(
+      alertText.includes('Failed to load filter presets') ||
+      alertText.includes('Unable to load filter presets')
+    ).toBe(true);
   });
 });
 

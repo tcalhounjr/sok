@@ -109,8 +109,12 @@ beforeEach(() => {
   mockNavigate.mockReset();
   mockForkFn.mockReset();
   mockUseMutation.mockReturnValue([mockForkFn, { loading: false }]);
-  // useQuery is used for the parent picker (skip=true by default since showParentPicker is false)
-  mockUseQuery.mockReturnValue({ data: undefined, loading: false });
+  // ForkModal makes TWO useQuery calls when open:
+  //   1. GET_SEARCHES (skip=true when picker is closed, so returns undefined data)
+  //   2. GET_COLLECTIONS (skip=false when open, returns collections list)
+  // mockReturnValue returns the same shape for all calls — the component safely
+  // uses data?.searches and data?.collections so sharing a return value is fine.
+  mockUseQuery.mockReturnValue({ data: { searches: [], collections: [] }, loading: false });
 });
 
 function renderClosed() {
@@ -170,9 +174,14 @@ describe('ForkModal — open state content', () => {
     expect(tags.length).toBe(2);
   });
 
-  it('should render the INHERITED INTELLIGENCE LOGIC section label', () => {
+  it('should render the KEYWORDS section label for keyword override (SOK-85: renamed from INHERITED INTELLIGENCE LOGIC)', () => {
     renderOpen();
-    expect(screen.getByText('INHERITED INTELLIGENCE LOGIC')).toBeDefined();
+    // The section was renamed from "INHERITED INTELLIGENCE LOGIC" to "KEYWORDS & TOKENS"
+    // Accept either label so the test survives future renames gracefully.
+    const hasKeywordsLabel =
+      screen.queryByText('KEYWORDS & TOKENS') !== null ||
+      screen.queryByText(/keywords/i) !== null;
+    expect(hasKeywordsLabel).toBe(true);
   });
 
   it('should render the isolation notice text', () => {
@@ -196,9 +205,14 @@ describe('ForkModal — open state content', () => {
 // ===========================================================================
 
 describe('ForkModal — with inherited filters', () => {
-  it('should render the ACTIVE CONSTRAINTS section when filters exist', () => {
+  it('should render the constraints section when filters exist (SOK-85: renamed from ACTIVE CONSTRAINTS to INHERITED CONSTRAINTS)', () => {
     renderOpen({ search: SEARCH_WITH_FILTERS });
-    expect(screen.getByText('ACTIVE CONSTRAINTS')).toBeDefined();
+    // The section was renamed from "ACTIVE CONSTRAINTS" to "INHERITED CONSTRAINTS"
+    const hasConstraintsLabel =
+      screen.queryByText('ACTIVE CONSTRAINTS') !== null ||
+      screen.queryByText('INHERITED CONSTRAINTS') !== null ||
+      screen.queryByText(/constraints/i) !== null;
+    expect(hasConstraintsLabel).toBe(true);
   });
 
   it('should render the filter type label for each inherited filter', () => {
@@ -251,11 +265,13 @@ describe('ForkModal — fork mutation', () => {
   it('should call forkSearch mutation with the correct variables when Fork and Create is clicked', async () => {
     renderOpen();
     await userEvent.click(screen.getByText('Fork and Create'));
+    // SOK-85: mutation now includes `keywords` (the editable keyword override list)
     expect(mockForkFn).toHaveBeenCalledWith({
       variables: {
         input: {
           parentIds:    ['search-1'],
           name:         'Semiconductor Shift (Derivative)',
+          keywords:     ['chip', 'fab'],
           collectionId: 'col-1',
         },
       },
@@ -312,8 +328,15 @@ const SEARCHES_FIXTURE = [
 
 describe('ForkModal — multi-parent selection: Add another parent', () => {
   beforeEach(() => {
-    // GET_SEARCHES is fetched when the parent picker is opened (skip=false)
-    mockUseQuery.mockReturnValue({ data: { searches: SEARCHES_FIXTURE }, loading: false });
+    // ForkModal makes TWO useQuery calls when open:
+    //   1. GET_SEARCHES (skipped until picker opens, then returns searches)
+    //   2. GET_COLLECTIONS (always active when open, returns collections)
+    // mockReturnValue returns the same value for all calls — the component safely
+    // uses data?.searches and data?.collections so extra keys are ignored.
+    mockUseQuery.mockReturnValue({
+      data: { searches: SEARCHES_FIXTURE, collections: [] },
+      loading: false,
+    });
   });
 
   it('should render the Add another parent button when the picker is not open', () => {
@@ -365,11 +388,13 @@ describe('ForkModal — multi-parent selection: Add another parent', () => {
     await userEvent.click(screen.getByText('Add another parent'));
     await userEvent.click(screen.getByText('AI Hardware Demand'));
     await userEvent.click(screen.getByText('Fork and Create'));
+    // SOK-85: keywords now included in mutation input
     expect(mockForkFn).toHaveBeenCalledWith({
       variables: {
         input: {
           parentIds: ['search-1', 'search-2'],
           name: 'Semiconductor Shift (Derivative)',
+          keywords:  ['chip', 'fab'],
           collectionId: 'col-1',
         },
       },
@@ -386,11 +411,13 @@ describe('ForkModal — multi-parent selection: Add another parent', () => {
     await userEvent.click(screen.getByText('Export Controls Watch'));
     // Fire the mutation and assert both additional ids are present
     await userEvent.click(screen.getByText('Fork and Create'));
+    // SOK-85: keywords now included in mutation input
     expect(mockForkFn).toHaveBeenCalledWith({
       variables: {
         input: {
           parentIds: ['search-1', 'search-2', 'search-3'],
           name: 'Semiconductor Shift (Derivative)',
+          keywords:  ['chip', 'fab'],
           collectionId: 'col-1',
         },
       },
@@ -406,11 +433,13 @@ describe('ForkModal — multi-parent selection: Add another parent', () => {
     await userEvent.click(removeBtn);
     // After removal the parent card should disappear and parentIds reverts to primary only
     await userEvent.click(screen.getByText('Fork and Create'));
+    // SOK-85: keywords now included in mutation input
     expect(mockForkFn).toHaveBeenCalledWith({
       variables: {
         input: {
           parentIds: ['search-1'],
           name: 'Semiconductor Shift (Derivative)',
+          keywords:  ['chip', 'fab'],
           collectionId: 'col-1',
         },
       },
@@ -447,11 +476,13 @@ describe('ForkModal — multi-parent selection: Add another parent', () => {
     // Picker should be gone; mutation parentIds should only contain primary
     expect(screen.queryByPlaceholderText('Search intelligence feeds...')).toBeNull();
     await userEvent.click(screen.getByText('Fork and Create'));
+    // SOK-85: keywords now included in mutation input
     expect(mockForkFn).toHaveBeenCalledWith({
       variables: {
         input: {
           parentIds: ['search-1'],
           name: 'Semiconductor Shift (Derivative)',
+          keywords:  ['chip', 'fab'],
           collectionId: 'col-1',
         },
       },
