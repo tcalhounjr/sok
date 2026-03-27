@@ -1,20 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Search, Sliders,
-  Archive, HelpCircle,
+  LayoutDashboard, Search, Sliders, Archive,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const navItems = [
-  { to: '/',           icon: LayoutDashboard, label: 'Dashboard'      },
-  { to: '/search/new', icon: Search,           label: 'Search Builder' },
-  { to: '/presets',     icon: Sliders,  label: 'Preset Library' },
-  { to: '/collections', icon: Archive, label: 'Collections'    },
-];
-
-const bottomItems = [
-  { to: '/archive', icon: Archive,   label: 'Archive' },
-  { to: '/help',    icon: HelpCircle,label: 'Help'    },
+  { to: '/',            icon: LayoutDashboard, label: 'Dashboard'      },
+  { to: '/search/new',  icon: Search,          label: 'Search Builder' },
+  { to: '/presets',     icon: Sliders,         label: 'Preset Library' },
+  { to: '/collections', icon: Archive,         label: 'Collections'    },
 ];
 
 export function Sidebar() {
@@ -63,24 +57,9 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom nav */}
-      <div className="px-3 pb-4 space-y-0.5">
-        {bottomItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => cn(
-              'flex items-center gap-3 px-3 py-2 rounded-sm text-body-md transition-colors',
-              isActive
-                ? 'text-on_surface'
-                : 'text-on_surface_variant hover:text-on_surface hover:bg-surface_container'
-            )}
-          >
-            <Icon size={15} className="flex-shrink-0" />
-            <span className="font-body">{label}</span>
-          </NavLink>
-        ))}
-        <div className="px-3 py-2 mt-1">
+      {/* Bottom */}
+      <div className="px-3 pb-4">
+        <div className="px-3 py-2">
           <p className="overline text-on_surface_variant" style={{ fontSize: '0.5rem' }}>API Docs</p>
         </div>
       </div>
