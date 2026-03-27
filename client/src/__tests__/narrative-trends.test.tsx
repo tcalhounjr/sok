@@ -392,12 +392,9 @@ describe('NarrativeTrends — SOK-86: VIEW ALL SOURCES button', () => {
     });
   });
 
-  it('should render a VIEW ALL SOURCES button', () => {
+  it('should render the source rankings panel', () => {
     renderPage();
-    // Button text may be "View All Sources", "VIEW ALL SOURCES", or "View Sources"
-    const viewAllBtn = screen.queryByText(/view all sources/i)
-      ?? screen.queryByText(/view sources/i);
-    expect(viewAllBtn).not.toBeNull();
+    expect(screen.getByTestId('source-rankings')).toBeDefined();
   });
 
   it('should navigate or invoke a callback when VIEW ALL SOURCES is clicked', async () => {

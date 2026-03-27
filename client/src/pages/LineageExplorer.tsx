@@ -39,7 +39,6 @@ export function LineageExplorer() {
     <div className="flex h-full">
       <div className="flex-1 p-8 overflow-y-auto">
         <div className="mb-6">
-          <p className="overline text-primary mb-1">NEO4J RELATIONSHIP MODEL</p>
           <h1 className="font-display text-headline-md text-on_surface">Search Lineage Explorer</h1>
           <p className="text-body-md text-on_surface_variant mt-1">
             Visualize the evolution of your intelligence queries. Map derivative searches, filter

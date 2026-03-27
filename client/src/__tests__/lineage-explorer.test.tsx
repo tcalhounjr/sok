@@ -242,9 +242,9 @@ describe('LineageExplorer — branding', () => {
     mockUseQuery.mockReturnValue({ data: { searchLineage: LINEAGE_FIXTURE }, loading: false });
   });
 
-  it('should display the NEO4J RELATIONSHIP MODEL overline', () => {
+  it('should display the Search Lineage Explorer heading', () => {
     renderPage();
-    expect(screen.getByText('NEO4J RELATIONSHIP MODEL')).toBeDefined();
+    expect(screen.getByText('Search Lineage Explorer')).toBeDefined();
   });
 });
 

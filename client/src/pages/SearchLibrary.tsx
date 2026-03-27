@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
-import { Search, RefreshCw, SlidersHorizontal, Pin, Clock, Library } from 'lucide-react';
+import { Search, RefreshCw, SlidersHorizontal, Clock, Library } from 'lucide-react';
 import { GET_SEARCHES, GET_COLLECTIONS } from '../apollo/queries';
 import { useBreadcrumb } from '../context/BreadcrumbContext';
 import { SearchCard } from '../components/search/SearchCard';
@@ -113,7 +113,7 @@ export function SearchLibrary() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 mt-4">
-            {filtered.map(s => <SearchCard key={s.id} search={s} />)}
+            {filtered.map(s => <SearchCard key={s.id} search={s} onDeleted={() => refetch()} />)}
             {filtered.length === 0 && (
               <div className="col-span-2 py-16 text-center text-on_surface_variant text-body-md font-body">
                 No searches found.{' '}
@@ -128,8 +128,8 @@ export function SearchLibrary() {
 
       <aside className="w-64 flex-shrink-0 p-6 border-l border-surface_bright/10 space-y-6">
         <div>
-          <p className="overline text-on_surface_variant mb-3 flex items-center gap-1.5">
-            <Pin size={10} /> PINNED COLLECTIONS
+          <p className="overline text-on_surface_variant mb-3">
+            COLLECTIONS
           </p>
           <div className="space-y-2">
             {collectionError ? (

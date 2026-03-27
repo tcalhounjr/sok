@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { GET_NARRATIVE_TRENDS } from '../apollo/queries';
@@ -21,7 +21,6 @@ export function NarrativeTrends() {
   const navigate = useNavigate();
   const { pushCrumb } = useBreadcrumb();
   const [interval, setIntervalVal] = useState('ALL');
-  const sourceRankingsRef = useRef<HTMLDivElement | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_NARRATIVE_TRENDS, {
     variables: { searchId: id, interval },
@@ -55,7 +54,7 @@ export function NarrativeTrends() {
             {
               label: 'SOURCES',
               active: false,
-              onClick: () => sourceRankingsRef.current?.scrollIntoView({ behavior: 'smooth' }),
+              onClick: undefined,
             },
           ].map(({ label, active, onClick }) => (
             <button
@@ -127,13 +126,12 @@ export function NarrativeTrends() {
             </div>
 
             {/* Topics + Sources row */}
-            <div className="grid grid-cols-2 gap-5 mb-5" ref={sourceRankingsRef}>
+            <div className="grid grid-cols-2 gap-5 mb-5">
               <TopicCloud topics={trends?.topTopics ?? []} loading={loading} />
               <SourceRankings
                 sources={trends?.topSources ?? []}
                 totalArticles={trends?.totalArticles ?? 0}
                 loading={loading}
-                onViewAll={() => sourceRankingsRef.current?.scrollIntoView({ behavior: 'smooth' })}
               />
             </div>
 

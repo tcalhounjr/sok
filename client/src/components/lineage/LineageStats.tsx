@@ -23,14 +23,13 @@ export function LineageStats({ lineage }: LineageStatsProps) {
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-surface_bright/10">
+      <div className="flex items-center mt-6 pt-4 border-t border-surface_bright/10">
         <div className="flex items-center gap-2">
           <StatusDot status="active" pulse />
           <span className="text-label-sm text-on_surface_variant font-body">
             System Status: Latency 24ms
           </span>
         </div>
-        <span className="overline text-on_surface_variant">NEO4J BOLT PROTOCOL ACTIVE</span>
       </div>
     </>
   );
