@@ -39,14 +39,7 @@ export function VolumeChart({ data, loading, onBarClick }: VolumeChartProps) {
         <Skeleton className="h-40" />
       ) : (
         <ResponsiveContainer width="100%" height={160}>
-          <BarChart
-            data={data}
-            barSize={18}
-            onClick={onBarClick ? (e: any) => {
-              const entry = e?.activePayload?.[0]?.payload as DailyVolume | undefined;
-              if (entry && entry.volume > 0) onBarClick(entry.date);
-            } : undefined}
-          >
+          <BarChart data={data} barSize={18}>
             <XAxis
               dataKey="date"
               tick={{ fill: '#9aa3b8', fontSize: 10, fontFamily: 'Inter' }}
@@ -57,7 +50,13 @@ export function VolumeChart({ data, loading, onBarClick }: VolumeChartProps) {
               }
             />
             <Tooltip content={<ChartTooltip />} />
-            <Bar dataKey="volume" radius={[2, 2, 0, 0]}>
+            <Bar
+              dataKey="volume"
+              radius={[2, 2, 0, 0]}
+              onClick={onBarClick ? (entry: DailyVolume) => {
+                if (entry.volume > 0) onBarClick(entry.date);
+              } : undefined}
+            >
               {data.map((entry, i) => (
                 <Cell
                   key={i}

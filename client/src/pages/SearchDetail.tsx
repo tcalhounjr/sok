@@ -306,7 +306,7 @@ export function SearchDetail() {
                   </p>
                 )}
 
-                <div className="space-y-4 flex-1 overflow-y-auto max-h-96">
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-[600px]">
                   {articles.map((article: Article) => (
                     <button
                       key={article.id}
