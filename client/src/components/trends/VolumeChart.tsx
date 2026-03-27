@@ -5,6 +5,7 @@ import type { DailyVolume } from '../../types';
 interface VolumeChartProps {
   data: DailyVolume[];
   loading: boolean;
+  onBarClick?: (date: string) => void;
 }
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -17,7 +18,7 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-export function VolumeChart({ data, loading }: VolumeChartProps) {
+export function VolumeChart({ data, loading, onBarClick }: VolumeChartProps) {
   return (
     <div className="card p-5">
       <div className="flex items-start justify-between mb-4">
@@ -38,7 +39,14 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
         <Skeleton className="h-40" />
       ) : (
         <ResponsiveContainer width="100%" height={160}>
-          <BarChart data={data} barSize={18}>
+          <BarChart
+            data={data}
+            barSize={18}
+            onClick={onBarClick ? (e) => {
+              const entry = e?.activePayload?.[0]?.payload as DailyVolume | undefined;
+              if (entry && entry.volume > 0) onBarClick(entry.date);
+            } : undefined}
+          >
             <XAxis
               dataKey="date"
               tick={{ fill: '#9aa3b8', fontSize: 10, fontFamily: 'Inter' }}
@@ -51,7 +59,11 @@ export function VolumeChart({ data, loading }: VolumeChartProps) {
             <Tooltip content={<ChartTooltip />} />
             <Bar dataKey="volume" radius={[2, 2, 0, 0]}>
               {data.map((entry, i) => (
-                <Cell key={i} fill={entry.volume > 0 ? '#4edea3' : '#222a3d'} />
+                <Cell
+                  key={i}
+                  fill={entry.volume > 0 ? '#4edea3' : '#222a3d'}
+                  style={{ cursor: onBarClick && entry.volume > 0 ? 'pointer' : 'default' }}
+                />
               ))}
             </Bar>
           </BarChart>

@@ -302,12 +302,12 @@ export function SearchDetail() {
                 {/* Article count label */}
                 {articles.length > 0 && (
                   <p className="text-label-sm text-on_surface_variant font-body mb-3">
-                    Showing {articles.length} articles
+                    {articles.length} articles matched
                   </p>
                 )}
 
-                <div className="space-y-4 flex-1">
-                  {articles.slice(0, 5).map((article: Article) => (
+                <div className="space-y-4 flex-1 overflow-y-auto max-h-96">
+                  {articles.map((article: Article) => (
                     <button
                       key={article.id}
                       onClick={() => setSelectedArticleId(article.id)}

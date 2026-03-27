@@ -236,6 +236,7 @@ export const typeDefs = `#graphql
     collections: [Collection!]!
     source(id: ID!): Source
     sourceArticles(sourceId: ID!, searchId: ID, limit: Int, offset: Int): [Article!]!
+    searchArticlesOnDate(searchId: ID!, date: String!): [Article!]!
     article(id: ID!): Article
     articles(searchId: ID, sentiment: Sentiment, sourceId: ID): [Article!]!
     topics: [Topic!]!

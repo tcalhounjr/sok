@@ -387,6 +387,20 @@ export const sourceQueries = {
     const records = await runQuery(driver, cypher, params);
     return records.map(r => toObject(r.get('a')) as ArticleNode);
   },
+
+  searchArticlesOnDate: async (
+    _: unknown,
+    { searchId, date }: { searchId: string; date: string },
+    { driver, callerId }: ApolloContext
+  ) => {
+    requireAuth(callerId);
+    const records = await runQuery(driver, `
+      MATCH (s:Search {id: $searchId})-[:MATCHES]->(a:Article)
+      WHERE a.publishedAt = date($date)
+      RETURN a ORDER BY a.publishedAt DESC
+    `, { searchId, date });
+    return records.map(r => toObject(r.get('a')) as ArticleNode);
+  },
 };
 
 // ---------------------------------------------------------------------------

@@ -123,6 +123,15 @@ export const GET_SOURCE_ARTICLES = gql`
   }
 `;
 
+export const GET_SEARCH_ARTICLES_ON_DATE = gql`
+  query GetSearchArticlesOnDate($searchId: ID!, $date: String!) {
+    searchArticlesOnDate(searchId: $searchId, date: $date) {
+      id headline publishedAt sentiment
+      source { id name tier }
+    }
+  }
+`;
+
 export const GET_ARTICLE = gql`
   query GetArticle($id: ID!) {
     article(id: $id) {

@@ -11,6 +11,7 @@ import { SentimentBreakdown } from '../components/trends/SentimentBreakdown';
 import { TopicCloud } from '../components/trends/TopicCloud';
 import { SourceRankings } from '../components/trends/SourceRankings';
 import { NarrativeShiftCard } from '../components/trends/NarrativeShiftCard';
+import { DayArticlesModal } from '../components/articles/DayArticlesModal';
 import { useBreadcrumb } from '../context/BreadcrumbContext';
 import type { NarrativeShift } from '../types';
 
@@ -21,6 +22,7 @@ export function NarrativeTrends() {
   const navigate = useNavigate();
   const { pushCrumb } = useBreadcrumb();
   const [interval, setIntervalVal] = useState('ALL');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_NARRATIVE_TRENDS, {
     variables: { searchId: id, interval },
@@ -51,11 +53,6 @@ export function NarrativeTrends() {
               active: false,
               onClick: id ? () => navigate(`/lineage/${id}`) : undefined,
             },
-            {
-              label: 'SOURCES',
-              active: false,
-              onClick: undefined,
-            },
           ].map(({ label, active, onClick }) => (
             <button
               key={label}
@@ -70,10 +67,6 @@ export function NarrativeTrends() {
               {label}
             </button>
           ))}
-        </div>
-        <div className="mt-8 space-y-0.5">
-          <button className="w-full text-left px-3 py-2 text-body-sm text-on_surface_variant font-body hover:text-on_surface transition-colors">ARCHIVE</button>
-          <button className="w-full text-left px-3 py-2 text-body-sm text-on_surface_variant font-body hover:text-on_surface transition-colors">HELP</button>
         </div>
       </aside>
 
@@ -120,7 +113,11 @@ export function NarrativeTrends() {
             {/* Charts row */}
             <div className="grid grid-cols-3 gap-5 mb-5">
               <div className="col-span-2">
-                <VolumeChart data={trends?.volumeOverTime ?? []} loading={loading} />
+                <VolumeChart
+                data={trends?.volumeOverTime ?? []}
+                loading={loading}
+                onBarClick={setSelectedDate}
+              />
               </div>
               <SentimentBreakdown data={trends?.sentimentBreakdown ?? null} loading={loading} />
             </div>
@@ -132,6 +129,7 @@ export function NarrativeTrends() {
                 sources={trends?.topSources ?? []}
                 totalArticles={trends?.totalArticles ?? 0}
                 loading={loading}
+                searchId={id}
               />
             </div>
 
@@ -156,5 +154,13 @@ export function NarrativeTrends() {
         )}
       </div>
     </div>
+
+    {id && (
+      <DayArticlesModal
+        searchId={id}
+        date={selectedDate}
+        onClose={() => setSelectedDate(null)}
+      />
+    )}
   );
 }
