@@ -38,6 +38,7 @@ export function NarrativeTrends() {
   }, [id, pushCrumb]);
 
   return (
+    <>
     <div className="flex h-full">
       {/* Left sidebar */}
       <aside className="w-44 flex-shrink-0 p-5 border-r border-surface_bright/10">
@@ -162,5 +163,6 @@ export function NarrativeTrends() {
         onClose={() => setSelectedDate(null)}
       />
     )}
+    </>
   );
 }
