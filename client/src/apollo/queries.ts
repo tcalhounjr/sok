@@ -126,7 +126,7 @@ export const GET_SOURCE_ARTICLES = gql`
 export const GET_SEARCH_ARTICLES_ON_DATE = gql`
   query GetSearchArticlesOnDate($searchId: ID!, $date: String!) {
     searchArticlesOnDate(searchId: $searchId, date: $date) {
-      id headline publishedAt sentiment
+      id headline publishedAt sentiment url
       source { id name tier }
     }
   }

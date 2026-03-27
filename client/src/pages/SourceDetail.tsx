@@ -7,6 +7,7 @@ import { GET_SOURCE, GET_SOURCE_ARTICLES } from '../apollo/queries';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { QueryErrorPanel } from '../components/ui/QueryErrorPanel';
+import { ArticleDetailModal } from '../components/articles/ArticleDetailModal';
 import { formatDate } from '../lib/utils';
 import { cn } from '../lib/utils';
 
@@ -32,6 +33,7 @@ export function SourceDetail() {
   const searchId = searchParams.get('searchId') ?? undefined;
   const { pushCrumb } = useBreadcrumb();
   const [page, setPage] = useState(0);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
 
   useEffect(() => { setPage(0); }, [id]);
 
@@ -182,10 +184,11 @@ export function SourceDetail() {
         ) : (
           <div className="space-y-0">
             {articles.map((article, i) => (
-              <div
+              <button
                 key={article.id}
+                onClick={() => setSelectedArticleId(article.id)}
                 className={cn(
-                  'flex items-start justify-between py-3 gap-4',
+                  'w-full text-left flex items-start justify-between py-3 gap-4 hover:bg-surface_container_high/30 -mx-1 px-1 rounded-sm transition-colors',
                   i < articles.length - 1 && 'border-b border-surface_bright/10'
                 )}
               >
@@ -200,7 +203,7 @@ export function SourceDetail() {
                 <Badge variant={sentimentVariant(article.sentiment)}>
                   {article.sentiment}
                 </Badge>
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -223,5 +226,10 @@ export function SourceDetail() {
         </div>
       </div>
     </div>
+
+    <ArticleDetailModal
+      articleId={selectedArticleId}
+      onClose={() => setSelectedArticleId(null)}
+    />
   );
 }

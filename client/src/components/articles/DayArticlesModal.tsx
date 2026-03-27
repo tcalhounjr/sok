@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { GET_SEARCH_ARTICLES_ON_DATE } from '../../apollo/queries';
 import { Skeleton } from '../ui/Skeleton';
 import { Badge } from '../ui/Badge';
@@ -94,24 +94,32 @@ export function DayArticlesModal({ searchId, date, onClose }: DayArticlesModalPr
                 <p className="text-body-sm text-on_surface_variant font-body">No articles on this date.</p>
               ) : (
                 <div className="space-y-0">
-                  {articles.map((article, i) => (
-                    <div
-                      key={article.id}
-                      className={`py-3 flex items-start justify-between gap-4 ${i < articles.length - 1 ? 'border-b border-surface_bright/10' : ''}`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="overline text-on_surface_variant mb-1 truncate">
-                          {article.source?.name?.toUpperCase()}
-                        </p>
-                        <p className="text-body-sm text-on_surface font-body leading-snug">
-                          {article.headline}
-                        </p>
-                      </div>
-                      <Badge variant={sentimentVariant(article.sentiment)}>
-                        {article.sentiment}
-                      </Badge>
-                    </div>
-                  ))}
+                  {articles.map((article, i) => {
+                    const safeUrl = /^https:\/\//.test(article.url ?? '') ? article.url : null;
+                    return (
+                      <a
+                        key={article.id}
+                        href={safeUrl ?? undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`py-3 flex items-start justify-between gap-4 group ${i < articles.length - 1 ? 'border-b border-surface_bright/10' : ''} ${safeUrl ? 'cursor-pointer hover:bg-surface_container_high/40 -mx-5 px-5 transition-colors' : ''}`}
+                        onClick={!safeUrl ? e => e.preventDefault() : undefined}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="overline text-on_surface_variant mb-1 truncate flex items-center gap-1.5">
+                            {article.source?.name?.toUpperCase()}
+                            {safeUrl && <ExternalLink size={10} className="opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />}
+                          </p>
+                          <p className="text-body-sm text-on_surface font-body leading-snug">
+                            {article.headline}
+                          </p>
+                        </div>
+                        <Badge variant={sentimentVariant(article.sentiment)}>
+                          {article.sentiment}
+                        </Badge>
+                      </a>
+                    );
+                  })}
                 </div>
               )}
             </div>
