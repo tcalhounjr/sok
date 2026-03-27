@@ -27,6 +27,12 @@ The primary user is a media analyst who returns to the same searches daily, refi
 
 ---
 
+## Demo Scenario
+
+A step-by-step walkthrough of the full search lifecycle — create, fork, organize, analyze, and delete — is available in [`docs/scenario.md`](docs/scenario.md). It covers every major surface in the application and is the recommended starting point for a first demo.
+
+---
+
 ## Tech Stack
 
 ### Frontend
