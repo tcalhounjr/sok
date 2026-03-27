@@ -115,7 +115,7 @@ If you have not yet created any filter presets, you can do so from the **Filter 
 
 ### Step 8 — Return to the Dashboard and delete the parent search
 
-1. Click **søk** in the top-left corner (or click **Dashboard** in the top navigation) to return to the home screen.
+1. Click the **søk** logo in the top-left corner of the sidebar to return to the home screen.
 2. In the search grid, locate the card for `Semiconductor Industry — Broad`.
 3. Hover over the card — a **⋮** (overflow) button appears in the top-right corner of the card.
 4. Click **⋮** and select **Delete** from the dropdown menu.
