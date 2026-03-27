@@ -85,6 +85,7 @@ export function SourceDetail() {
   );
 
   return (
+    <>
     <div className="p-8 overflow-y-auto h-full">
       {/* Back navigation */}
       <button
@@ -231,5 +232,6 @@ export function SourceDetail() {
       articleId={selectedArticleId}
       onClose={() => setSelectedArticleId(null)}
     />
+    </>
   );
 }
