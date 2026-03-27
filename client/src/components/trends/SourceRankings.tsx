@@ -6,9 +6,10 @@ interface SourceRankingsProps {
   sources: TopSourceCount[];
   totalArticles: number;
   loading: boolean;
+  searchId?: string;
 }
 
-export function SourceRankings({ sources, totalArticles: _totalArticles, loading }: SourceRankingsProps) {
+export function SourceRankings({ sources, totalArticles: _totalArticles, loading, searchId }: SourceRankingsProps) {
   const navigate = useNavigate();
   const maxCount = sources[0]?.count ?? 1;
 
@@ -27,7 +28,7 @@ export function SourceRankings({ sources, totalArticles: _totalArticles, loading
               <div key={source.id}>
                 <div className="flex items-center justify-between mb-1">
                   <button
-                    onClick={() => navigate(`/source/${source.id}`)}
+                    onClick={() => navigate(`/source/${source.id}${searchId ? `?searchId=${searchId}` : ''}`)}
                     className="text-body-sm text-on_surface font-body hover:text-primary transition-colors text-left"
                   >
                     {source.name}

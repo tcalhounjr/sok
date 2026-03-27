@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import { useEffect, useState } from 'react';
 import { useBreadcrumb } from '../context/BreadcrumbContext';
@@ -28,6 +28,8 @@ const PAGE_SIZE = 20;
 export function SourceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchId = searchParams.get('searchId') ?? undefined;
   const { pushCrumb } = useBreadcrumb();
   const [page, setPage] = useState(0);
 
@@ -38,7 +40,7 @@ export function SourceDetail() {
 
   const { data: articlesData, loading: articlesLoading, error: articlesError, refetch: refetchArticles } =
     useQuery(GET_SOURCE_ARTICLES, {
-      variables: { sourceId: id, limit: PAGE_SIZE, offset: page * PAGE_SIZE },
+      variables: { sourceId: id, searchId, limit: PAGE_SIZE, offset: page * PAGE_SIZE },
       skip: !id,
     });
 

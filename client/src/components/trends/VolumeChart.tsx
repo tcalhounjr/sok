@@ -42,7 +42,7 @@ export function VolumeChart({ data, loading, onBarClick }: VolumeChartProps) {
           <BarChart
             data={data}
             barSize={18}
-            onClick={onBarClick ? (e) => {
+            onClick={onBarClick ? (e: any) => {
               const entry = e?.activePayload?.[0]?.payload as DailyVolume | undefined;
               if (entry && entry.volume > 0) onBarClick(entry.date);
             } : undefined}

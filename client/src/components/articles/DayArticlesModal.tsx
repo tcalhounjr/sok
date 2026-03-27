@@ -3,7 +3,6 @@ import { X } from 'lucide-react';
 import { GET_SEARCH_ARTICLES_ON_DATE } from '../../apollo/queries';
 import { Skeleton } from '../ui/Skeleton';
 import { Badge } from '../ui/Badge';
-import { formatDate } from '../../lib/utils';
 
 interface DayArticlesModalProps {
   searchId: string;
