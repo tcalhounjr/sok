@@ -9,12 +9,16 @@ import { applySchema } from './neo4j/schema.js';
 import { ApolloContext } from './types/index.js';
 import { auditLogPlugin } from './plugins/auditLog.js';
 import { resolveCallerId } from './auth/middleware.js';
+import { startScheduler } from './scheduler.js';
 import 'dotenv/config';
 
 const driver = getDriver();
 
 // SOK-7: apply constraints and indexes on every boot (IF NOT EXISTS — safe to repeat)
 await applySchema(driver);
+
+// SOK-107/108: keep Neo4j Aura active + refresh article dates weekly
+startScheduler(driver);
 
 // Allowed origins — local dev + Vercel production.
 // Set CORS_ORIGIN in Railway env vars once you have your Vercel URL.
